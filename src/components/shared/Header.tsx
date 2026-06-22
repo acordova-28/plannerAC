@@ -1,4 +1,5 @@
 import { useTaskStore } from '../../store/useTaskStore'
+import { useAuthStore } from '../../store/useAuthStore'
 import { ComputedTask, ZoomLevel } from '../../types'
 import { exportCSV } from '../../utils/csvExport'
 import { formatDate, formatDateISO } from '../../utils/dateUtils'
@@ -15,6 +16,8 @@ export default function Header({ computed }: Props) {
   const config         = useTaskStore(s => s.config)
   const zoomLevel      = useTaskStore(s => s.zoomLevel)
   const view           = useTaskStore(s => s.view)
+  const user           = useAuthStore(s => s.user)
+  const logout         = useAuthStore(s => s.logout)
   const updateConfig   = useTaskStore(s => s.updateConfig)
   const setZoom        = useTaskStore(s => s.setZoom)
   const freezeBaseline = useTaskStore(s => s.freezeBaseline)
@@ -107,6 +110,20 @@ export default function Header({ computed }: Props) {
           className="px-3 py-1.5 rounded text-xs font-bold bg-green-600 hover:bg-green-500 transition-colors"
         >
           ⬇ Exportar CSV
+        </button>
+
+        {/* Separador + usuario + logout */}
+        <div className="w-px h-5 bg-white/20 mx-1" />
+        {user && (
+          <span className="text-xs opacity-75 font-medium whitespace-nowrap">
+            👤 {user.nombre}
+          </span>
+        )}
+        <button
+          onClick={logout}
+          className="px-3 py-1.5 rounded text-xs font-bold border border-white/30 hover:bg-white/10 transition-colors"
+        >
+          Salir
         </button>
       </div>
     </header>
