@@ -45,6 +45,18 @@ USE wuolla_planner;
 
 
 -- ============================================================
+-- SECCIÓN 0.1: Usuario de acceso a la base de datos
+-- ============================================================
+-- Crear usuario MySQL 'admin' con acceso desde cualquier host.
+-- Cambiar '%' por '127.0.0.1' o la IP del servidor en producción.
+-- ============================================================
+
+CREATE USER IF NOT EXISTS 'admin'@'%' IDENTIFIED BY 'admin1';
+GRANT ALL PRIVILEGES ON wuolla_planner.* TO 'admin'@'%';
+FLUSH PRIVILEGES;
+
+
+-- ============================================================
 -- SECCIÓN 1: Tablas sin dependencias de clave foránea
 -- ============================================================
 

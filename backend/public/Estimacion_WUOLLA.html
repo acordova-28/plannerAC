@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estimación WUOLLA</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 13px; background: #f0f4f8; color: #222; }
+
+  header {
+    background: #1A5276; color: #fff; padding: 16px 24px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  }
+  header h1 { font-size: 18px; font-weight: 700; letter-spacing: .5px; }
+  header .sub { font-size: 12px; opacity: .75; margin-top: 2px; }
+
+  .header-user { display: flex; align-items: center; gap: 14px; }
+  .header-user span { font-size: 13px; opacity: .9; }
+  .logout-btn {
+    background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.4);
+    border-radius: 6px; padding: 6px 14px; font-size: 12px; font-weight: 700;
+    cursor: pointer; transition: background .2s;
+  }
+  .logout-btn:hover { background: rgba(255,255,255,.25); }
+
+  .controls {
+    background: #fff; border-bottom: 2px solid #1A5276;
+    padding: 12px 24px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+  }
+  .ctrl-group { display: flex; align-items: center; gap: 8px; }
+  .ctrl-group label { font-weight: 700; color: #1A5276; white-space: nowrap; }
+  .ctrl-group input {
+    border: 1.5px solid #A9CCE8; border-radius: 6px; padding: 6px 10px;
+    font-size: 13px; color: #1A5276; font-weight: 700; outline: none;
+    transition: border-color .2s;
+  }
+  .ctrl-group input:focus { border-color: #1A5276; }
+
+  .stats {
+    background: #EAF4FB; border-bottom: 1px solid #D6EAF8;
+    padding: 10px 24px; display: flex; gap: 32px; flex-wrap: wrap;
+  }
+  .stat { display: flex; flex-direction: column; }
+  .stat span:first-child { font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: .5px; }
+  .stat span:last-child { font-size: 15px; font-weight: 700; color: #1A5276; }
+
+  .table-wrap { overflow-x: auto; padding: 16px 24px; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+
+  thead tr { background: #1A5276; color: #fff; }
+  thead th { padding: 11px 10px; text-align: left; font-size: 12px; font-weight: 700; white-space: nowrap; }
+  thead th.center { text-align: center; }
+
+  tbody tr { border-bottom: 1px solid #EBF5FB; transition: background .15s; }
+  tbody tr:hover { background: #F2F8FC; }
+  tbody tr.no-hours { opacity: .55; }
+
+  td { padding: 9px 10px; vertical-align: middle; }
+  td.center { text-align: center; }
+  td.task { max-width: 340px; line-height: 1.4; }
+  td.id { font-weight: 700; color: #1A5276; white-space: nowrap; font-size: 11px; }
+
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 12px;
+    font-size: 11px; font-weight: 700; white-space: nowrap;
+  }
+  .badge-alta    { background: #FADBD8; color: #922B21; }
+  .badge-baja    { background: #D5F5E3; color: #1E8449; }
+  .badge-media   { background: #FEF9E7; color: #9A7D0A; }
+  .badge-pend    { background: #EBF5FB; color: #1A5276; }
+  .badge-front   { background: #F9F0FF; color: #6C3483; }
+  .badge-back    { background: #FFF3E0; color: #A04000; }
+  .badge-fb      { background: #E8F8F5; color: #0E6655; }
+
+  .date-cell { text-align: center; }
+  .date-val  { font-weight: 700; color: #1A5276; font-size: 12px; }
+  .day-name  { font-size: 10px; color: #7FB3D3; margin-top: 1px; }
+  .no-date   { color: #BBB; font-style: italic; font-size: 11px; }
+
+  .hours-input {
+    width: 64px; border: 1.5px solid #D6EAF8; border-radius: 6px;
+    padding: 4px 6px; text-align: center; font-size: 13px; font-weight: 700;
+    color: #1A5276; outline: none; background: #EAF4FB;
+    transition: border-color .2s, background .2s;
+  }
+  .hours-input:focus { border-color: #1A5276; background: #fff; }
+  .hours-input.changed { border-color: #27AE60; background: #D5F5E3; }
+  .hours-input.saving  { border-color: #F39C12; background: #FEF9E7; }
+
+  .val-ok   { color: #1E8449; font-size: 11px; font-weight: 700; }
+  .val-warn { color: #922B21; font-size: 11px; font-weight: 700; }
+  .val-none { color: #BBB; font-size: 11px; font-style: italic; }
+
+  .export-btn {
+    background: #27AE60; color: #fff; border: none; border-radius: 6px;
+    padding: 8px 18px; font-size: 13px; font-weight: 700; cursor: pointer;
+    transition: background .2s;
+  }
+  .export-btn:hover { background: #1E8449; }
+
+  .legend { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; font-size: 11px; color: #555; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+
+  #loadingMsg {
+    text-align: center; padding: 40px; color: #1A5276; font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>📋 Control de Estimación — WUOLLA</h1>
+    <div class="sub">Las fechas se recalculan automáticamente · Lunes a Viernes · Horas acumuladas por día</div>
+  </div>
+  <div class="header-user">
+    <span id="userLabel"></span>
+    <button class="logout-btn" onclick="logout()">Cerrar sesión</button>
+    <button class="export-btn" onclick="exportCSV()">⬇ Exportar CSV</button>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="ctrl-group">
+    <label>📅 Fecha inicio:</label>
+    <input type="date" id="startDate" value="2026-06-23" oninput="recalc()">
+  </div>
+  <div class="ctrl-group">
+    <label>⏱ Horas por día:</label>
+    <input type="number" id="hpd" value="8" min="1" max="24" style="width:70px" oninput="recalc()">
+  </div>
+  <div class="legend">
+    <span><span class="legend-dot" style="background:#D6E8FF"></span>Fechas calculadas</span>
+    <span><span class="legend-dot" style="background:#FADBD8"></span>Sin horas</span>
+    <span><span class="legend-dot" style="background:#D5F5E3"></span>Horas modificadas</span>
+  </div>
+</div>
+
+<div class="stats" id="stats"></div>
+
+<div id="loadingMsg">Cargando tareas...</div>
+
+<div class="table-wrap" id="tableWrap" style="display:none">
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Módulo</th>
+      <th>Funcionalidad / Tarea</th>
+      <th class="center">Horas</th>
+      <th class="center">Prioridad</th>
+      <th class="center">Responsable</th>
+      <th class="center">Estado</th>
+      <th class="center">Fecha Inicio</th>
+      <th class="center">Fecha Fin</th>
+      <th class="center">Tipo</th>
+      <th class="center">✓ Día</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+</div>
+
+<script>
+// ── Constantes ──────────────────────────────────────────────────────────────
+const TOKEN_KEY = 'wuolla_token';
+const DAYS_ES   = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const DAYS_FULL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+
+// Estado mutable (poblado desde la API)
+let TASKS = [];
+let hours = [];
+const _saveTimers = {};
+
+// ── Auth guard ──────────────────────────────────────────────────────────────
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+
+function isTokenValid(token) {
+  if (!token) return false;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp * 1000 > Date.now();
+  } catch { return false; }
+}
+
+function parseTokenPayload(token) {
+  try { return JSON.parse(atob(token.split('.')[1])); } catch { return null; }
+}
+
+(function checkAuth() {
+  const token = getToken();
+  if (!isTokenValid(token)) {
+    localStorage.removeItem(TOKEN_KEY);
+    window.location.replace('/login.html');
+  }
+  const payload = parseTokenPayload(token);
+  if (payload) {
+    document.getElementById('userLabel').textContent = `👤 ${payload.nombre || payload.sub}`;
+  }
+})();
+
+// ── Fetch autenticado ───────────────────────────────────────────────────────
+async function apiFetch(url, options = {}) {
+  const token = getToken();
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      ...(options.headers || {}),
+    },
+  });
+  if (res.status === 401) {
+    localStorage.removeItem(TOKEN_KEY);
+    window.location.replace('/login.html');
+  }
+  return res;
+}
+
+// ── Logout ──────────────────────────────────────────────────────────────────
+function logout() {
+  localStorage.removeItem(TOKEN_KEY);
+  window.location.replace('/login.html');
+}
+
+// ── Carga inicial desde API ─────────────────────────────────────────────────
+async function loadTasks() {
+  const res = await apiFetch('/api/tasks');
+  if (!res.ok) {
+    document.getElementById('loadingMsg').textContent = 'Error al cargar las tareas. Recarga la página.';
+    return;
+  }
+  const data = await res.json();
+  TASKS = data;
+  hours = TASKS.map(t => t.horas);
+  document.getElementById('loadingMsg').style.display = 'none';
+  document.getElementById('tableWrap').style.display = '';
+  recalc();
+}
+
+// ── Persistencia de horas (debounced) ───────────────────────────────────────
+function scheduleHoursSave(i, value) {
+  const taskId = TASKS[i].id;
+  clearTimeout(_saveTimers[taskId]);
+
+  const el = document.querySelector(`[data-task-idx="${i}"]`);
+  if (el) el.classList.add('saving');
+
+  _saveTimers[taskId] = setTimeout(async () => {
+    await apiFetch(`/api/tasks/${taskId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ horasEstimadas: value }),
+    });
+    if (el) el.classList.remove('saving');
+  }, 600);
+}
+
+// ── Lógica de días laborables (sin cambios) ─────────────────────────────────
+function isWeekend(d) { return d.getDay() === 0 || d.getDay() === 6; }
+
+function firstWorkday(d) {
+  const r = new Date(d);
+  while (isWeekend(r)) r.setDate(r.getDate() + 1);
+  return r;
+}
+
+function nextWorkday(d) {
+  const r = new Date(d);
+  r.setDate(r.getDate() + 1);
+  while (isWeekend(r)) r.setDate(r.getDate() + 1);
+  return r;
+}
+
+function fmtDate(d) {
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const yy = d.getFullYear();
+  return `${dd}/${mm}/${yy}`;
+}
+
+function calcDates() {
+  const startStr = document.getElementById('startDate').value;
+  const hpd = parseFloat(document.getElementById('hpd').value) || 8;
+  if (!startStr) return [];
+
+  const [y,m,d] = startStr.split('-').map(Number);
+  let day = firstWorkday(new Date(y, m-1, d));
+  let hLeft = hpd;
+  const results = [];
+
+  for (let i = 0; i < TASKS.length; i++) {
+    const h = hours[i];
+    if (!h || h <= 0) { results.push({ start: null, end: null }); continue; }
+    let pending  = h;
+    const tStart = new Date(day);
+    while (pending > 0) {
+      const use = Math.min(pending, hLeft);
+      pending -= use;
+      hLeft   -= use;
+      if (hLeft === 0 && pending > 0) { day = nextWorkday(day); hLeft = hpd; }
+    }
+    const tEnd = new Date(day);
+    if (hLeft === 0) { day = nextWorkday(day); hLeft = hpd; }
+    results.push({ start: tStart, end: tEnd });
+  }
+  return results;
+}
+
+function badgeClass(val, type) {
+  if (type === 'prio') {
+    if (val === 'Alta') return 'badge-alta';
+    if (val === 'Baja') return 'badge-baja';
+    return 'badge-media';
+  }
+  if (type === 'tipo') {
+    if (val === 'Frontend')   return 'badge-front';
+    if (val === 'Backend')    return 'badge-back';
+    if (val === 'Front/Back') return 'badge-fb';
+    return 'badge-pend';
+  }
+  return 'badge-pend';
+}
+
+// ── Render de tabla (sin cambios funcionales) ───────────────────────────────
+function recalc() {
+  if (!TASKS.length) return;
+
+  const dates  = calcDates();
+  const hpd    = parseFloat(document.getElementById('hpd').value) || 8;
+  const tbody  = document.getElementById('tbody');
+  tbody.innerHTML = '';
+
+  let totalH = 0, withDates = 0, sinH = 0;
+  let lastEnd = null;
+
+  for (let i = 0; i < TASKS.length; i++) {
+    const t = TASKS[i];
+    const h = hours[i];
+    const { start, end } = dates[i] || {};
+    const hasH = h && h > 0;
+    if (hasH) { totalH += h; withDates++; lastEnd = end; }
+    else sinH++;
+
+    let startCell, endCell, valCell;
+    if (start) {
+      startCell = `<div class="date-val">${fmtDate(start)}</div><div class="day-name">${DAYS_FULL[start.getDay()]}</div>`;
+      endCell   = `<div class="date-val">${fmtDate(end)}</div><div class="day-name">${DAYS_FULL[end.getDay()]}</div>`;
+      if (isWeekend(start) || isWeekend(end)) {
+        valCell = `<span class="val-warn">⚠ Fin de semana</span>`;
+      } else {
+        valCell = `<span class="val-ok">✓ ${DAYS_ES[start.getDay()]} → ${DAYS_ES[end.getDay()]}</span>`;
+      }
+    } else {
+      startCell = `<span class="no-date">Sin estimar</span>`;
+      endCell   = `<span class="no-date">Sin estimar</span>`;
+      valCell   = `<span class="val-none">—</span>`;
+    }
+
+    const row = document.createElement('tr');
+    if (!hasH) row.classList.add('no-hours');
+    row.innerHTML = `
+      <td class="id">${t.id.slice(0, 8)}…</td>
+      <td>${t.modulo}</td>
+      <td class="task">${t.tarea}</td>
+      <td class="center">
+        <input class="hours-input ${h !== t.horas ? 'changed' : ''}"
+               type="number" min="0" step="0.5" value="${h ?? ''}"
+               placeholder="—"
+               data-task-idx="${i}"
+               data-orig="${t.horas ?? ''}"
+               oninput="updateHours(${i}, this.value, this)">
+      </td>
+      <td class="center"><span class="badge ${badgeClass(t.prioridad,'prio')}">${t.prioridad}</span></td>
+      <td class="center">${t.responsable || '—'}</td>
+      <td class="center"><span class="badge badge-pend">${t.estado}</span></td>
+      <td class="date-cell">${startCell}</td>
+      <td class="date-cell">${endCell}</td>
+      <td class="center">${t.tipo ? `<span class="badge ${badgeClass(t.tipo,'tipo')}">${t.tipo}</span>` : '—'}</td>
+      <td class="center">${valCell}</td>
+    `;
+    tbody.appendChild(row);
+  }
+
+  const endStr = lastEnd ? fmtDate(lastEnd) + ' (' + DAYS_FULL[lastEnd.getDay()] + ')' : '—';
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><span>Total tareas</span><span>${TASKS.length}</span></div>
+    <div class="stat"><span>Con horas</span><span>${withDates}</span></div>
+    <div class="stat"><span>Sin horas</span><span>${sinH}</span></div>
+    <div class="stat"><span>Total horas estimadas</span><span>${totalH}h</span></div>
+    <div class="stat"><span>Horas por día</span><span>${hpd}h</span></div>
+    <div class="stat"><span>📅 Fecha fin estimada</span><span>${endStr}</span></div>
+  `;
+}
+
+// ── Edición de horas ────────────────────────────────────────────────────────
+function updateHours(i, val, el) {
+  const v = parseFloat(val);
+  hours[i] = (!val || val === '' || isNaN(v) || v <= 0) ? null : v;
+  const orig = parseFloat(el.dataset.orig);
+  el.classList.toggle('changed', hours[i] !== (isNaN(orig) ? null : orig));
+  recalc();
+  scheduleHoursSave(i, hours[i]);
+}
+
+// ── Exportar CSV (descarga desde la API con autenticación) ──────────────────
+async function exportCSV() {
+  const res = await apiFetch('/api/tasks/export/csv');
+  if (!res.ok) return;
+  const blob = await res.blob();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Estimacion_WUOLLA_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+// ── Arranque ────────────────────────────────────────────────────────────────
+loadTasks();
+</script>
+</body>
+</html>
