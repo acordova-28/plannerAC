@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\pasante.desarrollo\\\\plannerAC\" -Recurse -Force | Select-Object FullName, PSIsContainer | ForEach-Object { if \\($_.PSIsContainer\\) { $_.FullName + \" [DIR]\" } else { $_.FullName } } | Sort-Object)",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\pasante.desarrollo\\\\plannerAC\" -Force | Where-Object { -not $_.PSIsContainer } | Select-Object Name)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\pasante.desarrollo\\\\plannerAC\" -Force | ForEach-Object { $_.Name })",
+      "PowerShell(Get-Command *)",
+      "PowerShell(& \"C:\\\\Program Files\\\\MySQL\\\\MySQL Server 8.0\\\\bin\\\\mysql.exe\" -u admin -padmin1 wuolla_planner -e \"SHOW TABLES;\" 2>&1)",
+      "PowerShell(cd C:\\\\Users\\\\pasante.desarrollo\\\\plannerAC; git rev-parse --show-toplevel; Get-ChildItem -Recurse -Depth 1 | Where-Object { $_.PSIsContainer } | Select-Object FullName)",
+      "PowerShell(cd C:\\\\Users\\\\pasante.desarrollo\\\\plannerAC\\\\backend; Get-ChildItem -Recurse -File | Where-Object { $_.FullName -notmatch \"node_modules|dist\" } | Select-Object @{N='Path';E={$_.FullName.Replace\\('C:\\\\Users\\\\pasante.desarrollo\\\\plannerAC\\\\backend\\\\',''\\)}} | Sort-Object Path)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\pasante.desarrollo\\\\plannerAC\\\\backend\" -Recurse -File | Where-Object { $_.FullName -notmatch \"node_modules|dist\" } | ForEach-Object { $_.FullName.Replace\\(\"C:\\\\Users\\\\pasante.desarrollo\\\\plannerAC\\\\backend\\\\\",\"\"\\) })",
+      "PowerShell(Set-Location \"C:\\\\Users\\\\pasante.desarrollo\\\\plannerAC\"; $acl = Get-Acl \"src\"; $acl.Access | Select-Object IdentityReference, FileSystemRights | Format-Table)",
+      "PowerShell(Get-Process *)",
+      "PowerShell(Set-Location \"C:\\\\Users\\\\pasante.desarrollo\\\\plannerAC\\\\.claude\\\\worktrees\\\\agent-ac010521a984bf700\"; Write-Host \"Current dir: $PWD\")",
+      "PowerShell(Head-Object *)",
+      "PowerShell(Set-Location \"C:\\\\Users\\\\pasante.desarrollo\\\\plannerAC\"; $handle = [System.IO.Directory]::Exists\\(\"src\"\\); Write-Host \"Exists: $handle\"; [System.IO.File]::SetAttributes\\(\"src\", [System.IO.FileAttributes]::Normal\\))",
+      "PowerShell(robocopy *)",
+      "PowerShell(Set-Location \"C:\\\\Users\\\\pasante.desarrollo\\\\plannerAC\"; git status --short 2>&1 | Where-Object { $_ -notmatch \"^warning\" } | Select-Object -Last 30)",
+      "PowerShell(git add *)",
+      "PowerShell(Set-Location \"C:\\\\Users\\\\pasante.desarrollo\\\\plannerAC\"; git status --short 2>&1 | Where-Object { $_ -notmatch \"^warning\" } | Select-Object -First 20)",
+      "PowerShell(New-Item *)",
+      "PowerShell(Set-Location \"C:\\\\Users\\\\pasante.desarrollo\\\\plannerAC\"; git status --short 2>&1 | Where-Object { $_ -notmatch \"^warning\" } | Where-Object { $_ -match \"backend\" } | Select-Object -First 20)",
+      "PowerShell(Set-Location \"C:\\\\Users\\\\pasante.desarrollo\\\\plannerAC\"; git status --short 2>&1 | Where-Object { $_ -notmatch \"^warning\" } | Where-Object { $_ -match \"^ D backend\" } | Select-Object -First 20)",
+      "PowerShell(Set-Location \"C:\\\\Users\\\\pasante.desarrollo\\\\plannerAC\"; git status --short 2>&1 | Where-Object { $_ -notmatch \"^warning\" } | Where-Object { $_ -match \"^ D \\(src|index|vite|tsconfig\\)\" } | Select-Object -First 20)"
+    ]
+  }
+}
