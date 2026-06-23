@@ -7,3 +7,4 @@ dist/
 *.tsbuildinfo
 apps/frontend/dist/
 apps/backend/dist/
+.claude/worktrees/
