@@ -1,23 +1,31 @@
-import { Entity, Column, ManyToOne, JoinColumn, PrimaryColumn } from 'typeorm'
-import { Plan } from './plan.entity'
-import { User } from '../../users/entities/user.entity'
+import { Entity, Column, ManyToOne, JoinColumn, PrimaryColumn } from 'typeorm';
+import { Plan } from './plan.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Entity('plan_users')
 export class PlanUser {
   @PrimaryColumn({ name: 'plan_id', type: 'char', length: 36 })
-  planId: string
+  planId: string;
 
   @PrimaryColumn({ name: 'user_id', type: 'char', length: 36 })
-  userId: string
+  userId: string;
 
   @Column({ length: 20 })
-  rol: string
+  rol: string;
 
-  @ManyToOne(() => Plan, plan => plan.planUsers, { onDelete: 'CASCADE' })
+  @Column({
+    name: 'horas_por_dia',
+    type: 'tinyint',
+    unsigned: true,
+    default: 8,
+  })
+  horasPorDia: number;
+
+  @ManyToOne(() => Plan, (plan) => plan.planUsers, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'plan_id' })
-  plan: Plan
+  plan: Plan;
 
-  @ManyToOne(() => User, user => user.planUsers, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.planUsers, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
-  user: User
+  user: User;
 }

@@ -1,30 +1,35 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn,
-} from 'typeorm'
-import { Plan } from '../../plans/entities/plan.entity'
-import { TaskDinamico } from './task-dinamico.entity'
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+} from 'typeorm';
+import { Plan } from '../../plans/entities/plan.entity';
+import { TaskDinamico } from './task-dinamico.entity';
 
 @Entity('campos')
 export class Campo {
   @PrimaryGeneratedColumn('uuid')
-  id: string
+  id: string;
 
   @Column({ name: 'plan_id', type: 'char', length: 36 })
-  planId: string
+  planId: string;
 
   @Column({ length: 150 })
-  nombre: string
+  nombre: string;
 
   @Column({ name: 'tipo_dato', length: 20, default: 'texto' })
-  tipoDato: string
+  tipoDato: string;
 
   @Column({ type: 'smallint', unsigned: true, default: 0 })
-  orden: number
+  orden: number;
 
-  @ManyToOne(() => Plan, plan => plan.campos, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Plan, (plan) => plan.campos, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'plan_id' })
-  plan: Plan
+  plan: Plan;
 
-  @OneToMany(() => TaskDinamico, td => td.campo, { cascade: true })
-  taskDinamicos: TaskDinamico[]
+  @OneToMany(() => TaskDinamico, (td) => td.campo, { cascade: true })
+  taskDinamicos: TaskDinamico[];
 }

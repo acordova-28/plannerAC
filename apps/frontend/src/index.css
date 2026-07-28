@@ -1,5 +1,50 @@
 @import "tailwindcss";
 
+/* ── Kanban card ── */
+.k-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px;
+  cursor: grab;
+  box-shadow: 0 1px 3px rgba(15,23,42,.05);
+  transition:
+    box-shadow .22s cubic-bezier(.2,.8,.2,1),
+    transform  .22s cubic-bezier(.2,.8,.2,1),
+    border-color .15s ease;
+  will-change: transform;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.k-card:hover:not(.k-floating) {
+  box-shadow: 0 6px 20px rgba(15,23,42,.11), 0 2px 6px rgba(15,23,42,.06);
+  transform: translateY(-2px) scale(1.01);
+  border-color: #c7d2e8;
+}
+.k-card.k-floating {
+  cursor: grabbing !important;
+  pointer-events: none;
+}
+.k-origin-ph {
+  border-radius: 10px;
+  border: 2px dashed #e2e8f0;
+  background: rgba(241,245,249,.7);
+}
+.k-drop-ph {
+  border-radius: 10px;
+  border: 2px dashed #748ffc;
+  background: rgba(59,91,219,.05);
+  animation: kDropPhIn .16s cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes kLiftOff {
+  0%   { transform: scale(1);    box-shadow: 0 1px 3px rgba(15,23,42,.05); }
+  100% { transform: scale(1.03); box-shadow: 0 24px 56px rgba(15,23,42,.26), 0 8px 22px rgba(15,23,42,.14); }
+}
+@keyframes kDropPhIn {
+  from { opacity: 0; transform: scaleY(0.4); transform-origin: top; }
+  to   { opacity: 1; transform: scaleY(1);   transform-origin: top; }
+}
+
 @layer base {
   * {
     box-sizing: border-box;

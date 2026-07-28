@@ -1,83 +1,60 @@
-import { useDraggable } from '@dnd-kit/core'
-import { CSS } from '@dnd-kit/utilities'
-import { ComputedTask } from '@wuolla/shared'
-import { useTaskStore } from '../../store/useTaskStore'
-import Badge from '../shared/PriorityBadge'
+import {
+  STATUS_META, computeEndISO, fmtShort, parseISO, initials, hexAlpha,
+  type PlannerTask, type Member, type PlannerModule,
+} from '../../store/usePlannerStore'
 
-interface Props { task: ComputedTask }
-
-function initials(name: string): string {
-  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?'
+export interface KanbanCardProps {
+  task:          PlannerTask
+  members:       Member[]
+  modules:       PlannerModule[]
+  onPointerDown: (e: React.PointerEvent) => void
+  isFloating?:   boolean
 }
 
-export default function KanbanCard({ task }: Props) {
-  const setActiveTask = useTaskStore(s => s.setActiveTask)
-
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: task.id,
-  })
-
-  const style = {
-    transform: CSS.Translate.toString(transform),
-    opacity:   isDragging ? 0.4 : 1,
-    cursor:    isDragging ? 'grabbing' : 'grab',
-  }
+export default function KanbanCard({ task, members, modules, onPointerDown, isFloating }: KanbanCardProps) {
+  const assignee   = members.find(m => m.id === task.assigneeId)
+  const mod        = modules.find(m => m.id === task.moduleId)
+  const statusMeta = STATUS_META[task.status]
+  const endISO     = computeEndISO(task, members)
+  const modColor   = mod?.color || '#94a3b8'
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
-      {...listeners}
-      {...attributes}
-      className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm hover:shadow-md transition-shadow select-none"
+      data-card-id={!isFloating ? task.id : undefined}
+      onPointerDown={!isFloating ? onPointerDown : undefined}
+      className={isFloating ? 'k-card k-floating' : 'k-card'}
     >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <span className="text-[10px] font-bold text-[#1A5276] font-mono">{task.id}</span>
-        <Badge type="prioridad" value={task.prioridad} />
+      {/* Module pill + status dot */}
+      <div className="flex items-center justify-between gap-1.5 mb-2.5">
+        <span style={{ fontSize: 10.5, fontWeight: 600, padding: '2px 8px', borderRadius: 6, background: hexAlpha(modColor, .13), color: modColor }}>
+          {mod?.name || '—'}
+        </span>
+        <span style={{ width: 8, height: 8, borderRadius: '50%', background: statusMeta.dot, flexShrink: 0 }} title={statusMeta.label} />
       </div>
 
-      {/* Task name */}
-      <p
-        className="text-xs text-slate-700 leading-snug mb-2.5 cursor-pointer hover:text-[#1A5276] transition-colors"
-        onClick={e => { e.stopPropagation(); setActiveTask(task.id) }}
-        onPointerDown={e => e.stopPropagation()}
-      >
-        {task.tarea}
-      </p>
+      {/* Title */}
+      <div className="text-[13.5px] font-semibold text-slate-800 leading-snug mb-3">
+        {task.name || 'Tarea sin título'}
+      </div>
 
-      {/* Footer */}
+      {/* Footer: avatar + date */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex gap-1.5 flex-wrap">
-          {task.tipo && <Badge type="tipo" value={task.tipo} />}
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          {task.horas && (
-            <span className="text-[10px] font-bold text-slate-400 bg-slate-100 rounded px-1.5 py-0.5">
-              {task.horas}h
-            </span>
-          )}
-          {task.responsable && (
-            <div
-              title={task.responsable}
-              className="w-6 h-6 rounded-full bg-[#1A5276] text-white text-[9px] font-bold flex items-center justify-center shrink-0"
-            >
-              {initials(task.responsable)}
-            </div>
-          )}
-        </div>
+        <span
+          className="inline-flex items-center justify-center w-6 h-6 rounded-full text-[9px] font-bold text-white shrink-0"
+          style={{ background: assignee?.color || '#cbd5e1' }}
+          title={assignee?.name}
+        >
+          {assignee ? initials(assignee.name) : '?'}
+        </span>
+        {endISO && (
+          <span className="inline-flex items-center gap-1 text-[11.5px] text-slate-500">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>
+            </svg>
+            {fmtShort(parseISO(endISO))}
+          </span>
+        )}
       </div>
-
-      {/* Progress bar */}
-      {task.porcentajeReal > 0 && (
-        <div className="mt-2 h-1 bg-slate-100 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-green-500 rounded-full transition-all"
-            style={{ width: `${task.porcentajeReal}%` }}
-          />
-        </div>
-      )}
     </div>
   )
 }

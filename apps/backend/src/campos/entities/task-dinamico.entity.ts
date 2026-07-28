@@ -1,29 +1,36 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Unique,
-} from 'typeorm'
-import { Task } from '../../tasks/entities/task.entity'
-import { Campo } from './campo.entity'
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  Unique,
+} from 'typeorm';
+import { Task } from '../../tasks/entities/task.entity';
+import { Campo } from './campo.entity';
 
 @Entity('task_dinamicos')
 @Unique(['taskId', 'campoId'])
 export class TaskDinamico {
   @PrimaryGeneratedColumn('uuid')
-  id: string
+  id: string;
 
   @Column({ name: 'task_id', type: 'char', length: 36 })
-  taskId: string
+  taskId: string;
 
   @Column({ name: 'campo_id', type: 'char', length: 36 })
-  campoId: string
+  campoId: string;
 
   @Column({ type: 'text', nullable: true })
-  valor: string | null
+  valor: string | null;
 
-  @ManyToOne(() => Task, task => task.dinamicos, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Task, (task) => task.dinamicos, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'task_id' })
-  task: Task
+  task: Task;
 
-  @ManyToOne(() => Campo, campo => campo.taskDinamicos, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Campo, (campo) => campo.taskDinamicos, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'campo_id' })
-  campo: Campo
+  campo: Campo;
 }

@@ -1,6 +1,6 @@
-import { Controller, Get, UseGuards } from '@nestjs/common'
-import { EstadisticasService } from './estadisticas.service'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { EstadisticasService } from './estadisticas.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('estadisticas')
 @UseGuards(JwtAuthGuard)
@@ -9,6 +9,6 @@ export class EstadisticasController {
 
   @Get()
   getEstadisticas() {
-    return this.service.getEstadisticas()
+    return this.service.getEstadisticas();
   }
 }

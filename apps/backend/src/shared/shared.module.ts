@@ -1,5 +1,5 @@
-import { Module } from '@nestjs/common'
-import { WorkingDaysService } from './working-days.service'
+import { Module } from '@nestjs/common';
+import { WorkingDaysService } from './working-days.service';
 
 @Module({
   providers: [WorkingDaysService],

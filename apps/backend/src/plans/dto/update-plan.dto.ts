@@ -1,18 +1,26 @@
-import { IsString, Length, IsDateString, IsInt, Min, Max, IsOptional } from 'class-validator'
+import {
+  IsString,
+  Length,
+  IsDateString,
+  IsInt,
+  Min,
+  Max,
+  IsOptional,
+} from 'class-validator';
 
 export class UpdatePlanDto {
   @IsOptional()
   @IsString()
   @Length(1, 255)
-  nombre?: string
+  nombre?: string;
 
   @IsOptional()
   @IsDateString()
-  fechaInicio?: string
+  fechaInicio?: string;
 
   @IsOptional()
   @IsInt()
   @Min(1)
   @Max(24)
-  horasPorDia?: number
+  horasPorDia?: number;
 }

@@ -1,15 +1,22 @@
-import { IsString, Length, IsDateString, IsInt, Min, Max } from 'class-validator'
+import {
+  IsString,
+  Length,
+  IsDateString,
+  IsInt,
+  Min,
+  Max,
+} from 'class-validator';
 
 export class CreatePlanDto {
   @IsString()
   @Length(1, 255)
-  nombre: string
+  nombre: string;
 
   @IsDateString()
-  fechaInicio: string
+  fechaInicio: string;
 
   @IsInt()
   @Min(1)
   @Max(24)
-  horasPorDia: number = 8
+  horasPorDia: number = 8;
 }

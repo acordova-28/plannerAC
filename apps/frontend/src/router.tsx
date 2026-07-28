@@ -18,6 +18,22 @@ export const router = createBrowserRouter([
     path: '/',
     element: (
       <PrivateRoute>
+        <Navigate to="/tareas" replace />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path: '/:planId/:section',
+    element: (
+      <PrivateRoute>
+        <Planner />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path: '/:section',
+    element: (
+      <PrivateRoute>
         <Planner />
       </PrivateRoute>
     ),
