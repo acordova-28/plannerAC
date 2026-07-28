@@ -123,10 +123,12 @@ CREATE TABLE IF NOT EXISTS plans (
 --      'viewer' solo lectura.
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS plan_users (
-  plan_id  CHAR(36)    NOT NULL,
-  user_id  CHAR(36)    NOT NULL,
-  rol      VARCHAR(20) NOT NULL
-           COMMENT 'admin | editor | viewer',
+  plan_id       CHAR(36)          NOT NULL,
+  user_id       CHAR(36)          NOT NULL,
+  rol           VARCHAR(20)       NOT NULL
+                COMMENT 'admin | editor | viewer',
+  horas_por_dia TINYINT UNSIGNED  NOT NULL DEFAULT 8
+                COMMENT 'Horas/día que este usuario dedica a este plan.',
 
   PRIMARY KEY (plan_id, user_id),
 
@@ -155,6 +157,8 @@ CREATE TABLE IF NOT EXISTS modulos (
   id       CHAR(36)          NOT NULL DEFAULT (UUID()),
   plan_id  CHAR(36)          NOT NULL,
   nombre   VARCHAR(150)      NOT NULL,
+  color    VARCHAR(7)        NOT NULL DEFAULT '#2563eb'
+           COMMENT 'Color del módulo en el Gantt/Kanban (hex).',
   orden    SMALLINT UNSIGNED NOT NULL DEFAULT 0
            COMMENT 'Posición de aparición en el Gantt',
 
@@ -269,6 +273,12 @@ CREATE TABLE IF NOT EXISTS tasks (
   -- Progreso real para la capa de avance en el Gantt (0–100 %)
   porcentaje_progreso   TINYINT UNSIGNED  NOT NULL DEFAULT 0
                         COMMENT '% de avance real. Capa de progreso (rojo/verde) en el Gantt.',
+
+  -- Texto libre
+  description           TEXT              NULL
+                        COMMENT 'Descripción larga de la tarea.',
+  notes                 TEXT              NULL
+                        COMMENT 'Notas adicionales.',
 
   created_at            DATETIME          NOT NULL DEFAULT NOW(),
   updated_at            DATETIME          NOT NULL DEFAULT NOW() ON UPDATE NOW(),
