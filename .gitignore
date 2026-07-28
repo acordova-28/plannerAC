@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+*.local
+*.tsbuildinfo
+apps/frontend/dist/
+apps/backend/dist/
+.claude/
+CLAUDE.md

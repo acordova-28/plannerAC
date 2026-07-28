@@ -15,6 +15,15 @@
   header h1 { font-size: 18px; font-weight: 700; letter-spacing: .5px; }
   header .sub { font-size: 12px; opacity: .75; margin-top: 2px; }
 
+  .header-user { display: flex; align-items: center; gap: 14px; }
+  .header-user span { font-size: 13px; opacity: .9; }
+  .logout-btn {
+    background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.4);
+    border-radius: 6px; padding: 6px 14px; font-size: 12px; font-weight: 700;
+    cursor: pointer; transition: background .2s;
+  }
+  .logout-btn:hover { background: rgba(255,255,255,.25); }
+
   .controls {
     background: #fff; border-bottom: 2px solid #1A5276;
     padding: 12px 24px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
@@ -50,7 +59,7 @@
   td { padding: 9px 10px; vertical-align: middle; }
   td.center { text-align: center; }
   td.task { max-width: 340px; line-height: 1.4; }
-  td.id { font-weight: 700; color: #1A5276; white-space: nowrap; }
+  td.id { font-weight: 700; color: #1A5276; white-space: nowrap; font-size: 11px; }
 
   .badge {
     display: inline-block; padding: 2px 8px; border-radius: 12px;
@@ -77,6 +86,7 @@
   }
   .hours-input:focus { border-color: #1A5276; background: #fff; }
   .hours-input.changed { border-color: #27AE60; background: #D5F5E3; }
+  .hours-input.saving  { border-color: #F39C12; background: #FEF9E7; }
 
   .val-ok   { color: #1E8449; font-size: 11px; font-weight: 700; }
   .val-warn { color: #922B21; font-size: 11px; font-weight: 700; }
@@ -91,6 +101,10 @@
 
   .legend { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; font-size: 11px; color: #555; }
   .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+
+  #loadingMsg {
+    text-align: center; padding: 40px; color: #1A5276; font-size: 14px;
+  }
 </style>
 </head>
 <body>
@@ -100,13 +114,17 @@
     <h1>📋 Control de Estimación — WUOLLA</h1>
     <div class="sub">Las fechas se recalculan automáticamente · Lunes a Viernes · Horas acumuladas por día</div>
   </div>
-  <button class="export-btn" onclick="exportCSV()">⬇ Exportar CSV</button>
+  <div class="header-user">
+    <span id="userLabel"></span>
+    <button class="logout-btn" onclick="logout()">Cerrar sesión</button>
+    <button class="export-btn" onclick="exportCSV()">⬇ Exportar CSV</button>
+  </div>
 </header>
 
 <div class="controls">
   <div class="ctrl-group">
     <label>📅 Fecha inicio:</label>
-    <input type="date" id="startDate" value="2026-06-18" oninput="recalc()">
+    <input type="date" id="startDate" value="2026-06-23" oninput="recalc()">
   </div>
   <div class="ctrl-group">
     <label>⏱ Horas por día:</label>
@@ -121,7 +139,9 @@
 
 <div class="stats" id="stats"></div>
 
-<div class="table-wrap">
+<div id="loadingMsg">Cargando tareas...</div>
+
+<div class="table-wrap" id="tableWrap" style="display:none">
 <table>
   <thead>
     <tr>
@@ -143,37 +163,100 @@
 </div>
 
 <script>
-const TASKS = [
-  {id:"WUO-001",modulo:"WUOLLA",tarea:"PRUEBAS DE INTEGRACIÓN CON SERVIENTREGA",horas:null,prioridad:"Alta",responsable:"Andrea",estado:"Pendiente",tipo:""},
-  {id:"WUO-002",modulo:"WUOLLA",tarea:"CONTAR CON TODO EL PORTAFOLIO CARGADO EN WUOLLA",horas:null,prioridad:"Alta",responsable:"Andrea",estado:"Pendiente",tipo:""},
-  {id:"WUO-003",modulo:"WUOLLA",tarea:"PRIORIZAR LA BÚSQUEDA POR RELACIÓN DE MOLÉCULAS CON PROVEEDORES QUE MANTENGAN CONVENIO DE ESPACIOS.",horas:null,prioridad:"Alta",responsable:"",estado:"Pendiente",tipo:"Front/Back"},
-  {id:"WUO-004",modulo:"WUOLLA",tarea:"CONSOLIDAR LAS ÓRDENES DE CRUZ AZUL Y LA GANGA PARA UNA VISUALIZACIÓN MÁS ORDENADA EN EL FRONT DE LA ORDEN.",horas:null,prioridad:"Alta",responsable:"Andrea",estado:"Pendiente",tipo:"Frontend"},
-  {id:"WUO-005",modulo:"WUOLLA",tarea:"CONFIRMAR LA PERIODICIDAD DE LOS COMUNICADOS AUTOMÁTICOS: CARRITO ABANDONADO.",horas:2,prioridad:"Alta",responsable:"Andrea",estado:"Pendiente",tipo:"Backend"},
-  {id:"WUO-006",modulo:"WUOLLA",tarea:"CONFIRMACIÓN COMUNICADOS POR PRODUCTOS RELACIONADOS POR COMPRAS REALIZADAS O PENDIENTE (RETARGETING).",horas:null,prioridad:"Alta",responsable:"",estado:"Pendiente",tipo:"Backend"},
-  {id:"WUO-007",modulo:"WUOLLA",tarea:"CONFIRMAR EL TEXTO DEFINITIVO QUE SE MOSTRARÁ EN LAS SECCIONES \"MANEJO Y ENVÍO\" Y \"FEE DE SERVICIO\".",horas:1,prioridad:"Alta",responsable:"Andrea",estado:"Pendiente",tipo:"Frontend"},
-  {id:"WUO-008",modulo:"WUOLLA",tarea:"INCORPORAR LOS LOGOS DE CRUZ AZUL Y LA GANGA EN EL DETALLE DE LA ORDEN.",horas:2,prioridad:"Alta",responsable:"Andrea",estado:"Pendiente",tipo:"Frontend"},
-  {id:"WUO-009",modulo:"WUOLLA",tarea:"CAMBIAR EL WIDGET DE CHAT AL ISOTIPO DE WUOLLA CON ÍCONO DE AURICULAR/CALL CENTER.",horas:1,prioridad:"Alta",responsable:"Andrea",estado:"Pendiente",tipo:"Frontend"},
-  {id:"WUO-010",modulo:"WUOLLA",tarea:"CONFIRMAR LA CONFIGURACIÓN DE CUPONES POR PROVEEDOR, INFLUENCER O PRODUCTO.",horas:null,prioridad:"Alta",responsable:"",estado:"Pendiente",tipo:"Front/Back"},
-  {id:"WUO-011",modulo:"WUOLLA",tarea:"AJUSTAR LA VISUALIZACIÓN DE UBICACIÓN/DIRECCIÓN PARA ENVÍOS A DOMICILIO Y RETIROS EN TIENDA, MINIMIZANDO EL LISTADO DE FARMACIAS MOSTRADAS.",horas:8,prioridad:"Alta",responsable:"Andrea",estado:"Pendiente",tipo:"Frontend"},
-  {id:"WUO-012",modulo:"WUOLLA",tarea:"VALIDAR EL FLUJO DE SELECCIÓN DE UBICACIÓN, PRIORIZANDO PRIMERO LA FARMACIA Y POSTERIORMENTE EL MAPA.",horas:2,prioridad:"Alta",responsable:"Andrea",estado:"Pendiente",tipo:"Frontend"},
-  {id:"WUO-013",modulo:"WUOLLA",tarea:"IMPLEMENTAR LA BARRA DE BUSQUEDA DE FARMACIA EN EL LISTADO",horas:2,prioridad:"Alta",responsable:"Andrea",estado:"Pendiente",tipo:"Frontend"},
-  {id:"WUO-014",modulo:"WUOLLA",tarea:"CAMBIAR COLOR DE LOS LOGOS DE LISTA Y MAPA.",horas:2,prioridad:"Alta",responsable:"Andrea",estado:"Pendiente",tipo:""},
-  {id:"WUO-015",modulo:"WUOLLA",tarea:"IMPLEMENTAR NOTIFICACIONES DE PEDIDO EN PROCESO.",horas:null,prioridad:"Alta",responsable:"Andrea",estado:"Pendiente",tipo:"Frontend"},
-  {id:"WUO-016",modulo:"WUOLLA",tarea:"RECOMENDACIONES DE PRODUCTOS SIMILARES, CUANDO BUSCO ALGO COMPLEMENTARIO.",horas:null,prioridad:"Alta",responsable:"",estado:"Pendiente",tipo:"Backend"},
-  {id:"WUO-017",modulo:"WUOLLA",tarea:"AGREGAR FORMAS DE PAGO: APPLE PAY + GOOGLE PAY.",horas:null,prioridad:"Alta",responsable:"",estado:"Pendiente",tipo:"Frontend"},
-  {id:"WUO-018",modulo:"WUOLLA",tarea:"BANNER LINKEADO A LA CATEGORIA",horas:6,prioridad:"Alta",responsable:"Andrea",estado:"Pendiente",tipo:"Frontend"},
-  {id:"WUO-019",modulo:"WUOLLA",tarea:"ALERTA POR NUEVOS DESCUENTOS",horas:8,prioridad:"Alta",responsable:"Andrea",estado:"Pendiente",tipo:"Front/Back"},
-  {id:"WUO-020",modulo:"WUOLLA",tarea:"LA GANGA : AUTOMATIZAR EL TRACKING DE FACTURACIÓN EN EL PORTAL ADMINISTRATIVO.",horas:null,prioridad:"Baja",responsable:"",estado:"Pendiente",tipo:"Front/Back"},
-  {id:"WUO-021",modulo:"WUOLLA",tarea:"LA GANGA: CHECKOUT Y EXPERIENCIA DE USUARIO : EN EL RESUMEN DE LA ORDEN, IMPLEMENTAR FILTROS DE TIENDAS POR PROVINCIA Y CIUDAD.",horas:null,prioridad:"Baja",responsable:"",estado:"Pendiente",tipo:"Front/Back"},
-  {id:"WUO-022",modulo:"WUOLLA",tarea:"LA GANGA: INTEGRACIÓN (APIS) Y PRUEBAS. CREAR Y FACILITAR UN PANEL ADMINISTRATIVO PARA ALIADOS COMERCIALES",horas:null,prioridad:"Baja",responsable:"",estado:"Pendiente",tipo:"Front/Back"},
-  {id:"WUO-023",modulo:"WUOLLA",tarea:"LA GANGA : HABILITAR ACCESO AL PORTAL ADMINISTRATIVO PARA PARTNERS (USUARIO/ROLES) Y ASEGURAR QUE LOS PARTNERS VEAN SUS ÓRDENES, DATOS DEL BENEFICIARIO, GUÍA/TRACKING Y ESTADO DE FACTURACIÓN.",horas:null,prioridad:"Baja",responsable:"",estado:"Pendiente",tipo:"Front/Back"},
-];
-
-// Mutable copy of hours
-const hours = TASKS.map(t => t.horas);
-const DAYS_ES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+// ── Constantes ──────────────────────────────────────────────────────────────
+const TOKEN_KEY = 'wuolla_token';
+const DAYS_ES   = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const DAYS_FULL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 
+// Estado mutable (poblado desde la API)
+let TASKS = [];
+let hours = [];
+const _saveTimers = {};
+
+// ── Auth guard ──────────────────────────────────────────────────────────────
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+
+function isTokenValid(token) {
+  if (!token) return false;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp * 1000 > Date.now();
+  } catch { return false; }
+}
+
+function parseTokenPayload(token) {
+  try { return JSON.parse(atob(token.split('.')[1])); } catch { return null; }
+}
+
+(function checkAuth() {
+  const token = getToken();
+  if (!isTokenValid(token)) {
+    localStorage.removeItem(TOKEN_KEY);
+    window.location.replace('/login.html');
+  }
+  const payload = parseTokenPayload(token);
+  if (payload) {
+    document.getElementById('userLabel').textContent = `👤 ${payload.nombre || payload.sub}`;
+  }
+})();
+
+// ── Fetch autenticado ───────────────────────────────────────────────────────
+async function apiFetch(url, options = {}) {
+  const token = getToken();
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      ...(options.headers || {}),
+    },
+  });
+  if (res.status === 401) {
+    localStorage.removeItem(TOKEN_KEY);
+    window.location.replace('/login.html');
+  }
+  return res;
+}
+
+// ── Logout ──────────────────────────────────────────────────────────────────
+function logout() {
+  localStorage.removeItem(TOKEN_KEY);
+  window.location.replace('/login.html');
+}
+
+// ── Carga inicial desde API ─────────────────────────────────────────────────
+async function loadTasks() {
+  const res = await apiFetch('/api/tasks');
+  if (!res.ok) {
+    document.getElementById('loadingMsg').textContent = 'Error al cargar las tareas. Recarga la página.';
+    return;
+  }
+  const data = await res.json();
+  TASKS = data;
+  hours = TASKS.map(t => t.horas);
+  document.getElementById('loadingMsg').style.display = 'none';
+  document.getElementById('tableWrap').style.display = '';
+  recalc();
+}
+
+// ── Persistencia de horas (debounced) ───────────────────────────────────────
+function scheduleHoursSave(i, value) {
+  const taskId = TASKS[i].id;
+  clearTimeout(_saveTimers[taskId]);
+
+  const el = document.querySelector(`[data-task-idx="${i}"]`);
+  if (el) el.classList.add('saving');
+
+  _saveTimers[taskId] = setTimeout(async () => {
+    await apiFetch(`/api/tasks/${taskId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ horasEstimadas: value }),
+    });
+    if (el) el.classList.remove('saving');
+  }, 600);
+}
+
+// ── Lógica de días laborables (sin cambios) ─────────────────────────────────
 function isWeekend(d) { return d.getDay() === 0 || d.getDay() === 6; }
 
 function firstWorkday(d) {
@@ -201,7 +284,6 @@ function calcDates() {
   const hpd = parseFloat(document.getElementById('hpd').value) || 8;
   if (!startStr) return [];
 
-  // Parse date avoiding timezone issues
   const [y,m,d] = startStr.split('-').map(Number);
   let day = firstWorkday(new Date(y, m-1, d));
   let hLeft = hpd;
@@ -209,26 +291,17 @@ function calcDates() {
 
   for (let i = 0; i < TASKS.length; i++) {
     const h = hours[i];
-    if (!h || h <= 0) {
-      results.push({ start: null, end: null });
-      continue;
-    }
-    let pending   = h;
-    const tStart  = new Date(day);
+    if (!h || h <= 0) { results.push({ start: null, end: null }); continue; }
+    let pending  = h;
+    const tStart = new Date(day);
     while (pending > 0) {
       const use = Math.min(pending, hLeft);
       pending -= use;
       hLeft   -= use;
-      if (hLeft === 0 && pending > 0) {
-        day   = nextWorkday(day);
-        hLeft = hpd;
-      }
+      if (hLeft === 0 && pending > 0) { day = nextWorkday(day); hLeft = hpd; }
     }
     const tEnd = new Date(day);
-    if (hLeft === 0) {
-      day   = nextWorkday(day);
-      hLeft = hpd;
-    }
+    if (hLeft === 0) { day = nextWorkday(day); hLeft = hpd; }
     results.push({ start: tStart, end: tEnd });
   }
   return results;
@@ -236,23 +309,26 @@ function calcDates() {
 
 function badgeClass(val, type) {
   if (type === 'prio') {
-    if (val==='Alta') return 'badge-alta';
-    if (val==='Baja') return 'badge-baja';
+    if (val === 'Alta') return 'badge-alta';
+    if (val === 'Baja') return 'badge-baja';
     return 'badge-media';
   }
-  if (type==='tipo') {
-    if (val==='Frontend') return 'badge-front';
-    if (val==='Backend')  return 'badge-back';
-    if (val==='Front/Back') return 'badge-fb';
+  if (type === 'tipo') {
+    if (val === 'Frontend')   return 'badge-front';
+    if (val === 'Backend')    return 'badge-back';
+    if (val === 'Front/Back') return 'badge-fb';
     return 'badge-pend';
   }
   return 'badge-pend';
 }
 
+// ── Render de tabla (sin cambios funcionales) ───────────────────────────────
 function recalc() {
-  const dates   = calcDates();
-  const hpd     = parseFloat(document.getElementById('hpd').value) || 8;
-  const tbody   = document.getElementById('tbody');
+  if (!TASKS.length) return;
+
+  const dates  = calcDates();
+  const hpd    = parseFloat(document.getElementById('hpd').value) || 8;
+  const tbody  = document.getElementById('tbody');
   tbody.innerHTML = '';
 
   let totalH = 0, withDates = 0, sinH = 0;
@@ -266,14 +342,11 @@ function recalc() {
     if (hasH) { totalH += h; withDates++; lastEnd = end; }
     else sinH++;
 
-    // Date cells
     let startCell, endCell, valCell;
     if (start) {
-      const warnS = isWeekend(start);
-      const warnE = isWeekend(end);
       startCell = `<div class="date-val">${fmtDate(start)}</div><div class="day-name">${DAYS_FULL[start.getDay()]}</div>`;
       endCell   = `<div class="date-val">${fmtDate(end)}</div><div class="day-name">${DAYS_FULL[end.getDay()]}</div>`;
-      if (warnS || warnE) {
+      if (isWeekend(start) || isWeekend(end)) {
         valCell = `<span class="val-warn">⚠ Fin de semana</span>`;
       } else {
         valCell = `<span class="val-ok">✓ ${DAYS_ES[start.getDay()]} → ${DAYS_ES[end.getDay()]}</span>`;
@@ -287,15 +360,16 @@ function recalc() {
     const row = document.createElement('tr');
     if (!hasH) row.classList.add('no-hours');
     row.innerHTML = `
-      <td class="id">${t.id}</td>
+      <td class="id">${t.id.slice(0, 8)}…</td>
       <td>${t.modulo}</td>
       <td class="task">${t.tarea}</td>
       <td class="center">
-        <input class="hours-input ${h !== t.horas ? 'changed':''}"
+        <input class="hours-input ${h !== t.horas ? 'changed' : ''}"
                type="number" min="0" step="0.5" value="${h ?? ''}"
                placeholder="—"
-               oninput="updateHours(${i}, this.value, this)"
-               data-orig="${t.horas ?? ''}">
+               data-task-idx="${i}"
+               data-orig="${t.horas ?? ''}"
+               oninput="updateHours(${i}, this.value, this)">
       </td>
       <td class="center"><span class="badge ${badgeClass(t.prioridad,'prio')}">${t.prioridad}</span></td>
       <td class="center">${t.responsable || '—'}</td>
@@ -308,7 +382,6 @@ function recalc() {
     tbody.appendChild(row);
   }
 
-  // Stats
   const endStr = lastEnd ? fmtDate(lastEnd) + ' (' + DAYS_FULL[lastEnd.getDay()] + ')' : '—';
   document.getElementById('stats').innerHTML = `
     <div class="stat"><span>Total tareas</span><span>${TASKS.length}</span></div>
@@ -320,35 +393,29 @@ function recalc() {
   `;
 }
 
+// ── Edición de horas ────────────────────────────────────────────────────────
 function updateHours(i, val, el) {
   const v = parseFloat(val);
-  hours[i] = (!val || val==='' || isNaN(v) || v <= 0) ? null : v;
+  hours[i] = (!val || val === '' || isNaN(v) || v <= 0) ? null : v;
   const orig = parseFloat(el.dataset.orig);
   el.classList.toggle('changed', hours[i] !== (isNaN(orig) ? null : orig));
   recalc();
+  scheduleHoursSave(i, hours[i]);
 }
 
-function exportCSV() {
-  const dates = calcDates();
-  const hpd   = document.getElementById('hpd').value;
-  const start = document.getElementById('startDate').value;
-  let csv = 'ID,Módulo,Tarea,Horas,Prioridad,Responsable,Estado,Fecha Inicio,Fecha Fin,Tipo\n';
-  for (let i = 0; i < TASKS.length; i++) {
-    const t = TASKS[i];
-    const h = hours[i] ?? '';
-    const s = dates[i]?.start ? fmtDate(dates[i].start) : '';
-    const e = dates[i]?.end   ? fmtDate(dates[i].end)   : '';
-    csv += `"${t.id}","${t.modulo}","${t.tarea}","${h}","${t.prioridad}","${t.responsable}","${t.estado}","${s}","${e}","${t.tipo}"\n`;
-  }
-  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+// ── Exportar CSV (descarga desde la API con autenticación) ──────────────────
+async function exportCSV() {
+  const res = await apiFetch('/api/tasks/export/csv');
+  if (!res.ok) return;
+  const blob = await res.blob();
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `Estimacion_WUOLLA_${start}.csv`;
+  a.download = `Estimacion_WUOLLA_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
 }
 
-// Initial render
-recalc();
+// ── Arranque ────────────────────────────────────────────────────────────────
+loadTasks();
 </script>
 </body>
 </html>
