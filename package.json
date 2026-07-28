@@ -2,15 +2,14 @@
   "name": "wuolla",
   "private": true,
   "workspaces": [
-    "apps/*",
-    "packages/*"
+    "apps/*"
   ],
   "scripts": {
     "dev": "npm run dev --workspace=apps/frontend",
     "dev:backend": "npm run start:dev --workspace=apps/backend",
     "build": "npm run build --workspace=apps/frontend",
     "build:backend": "npm run build --workspace=apps/backend",
-    "lint": "eslint \"apps/*/src/**/*.{ts,tsx}\" \"packages/*/src/**/*.ts\""
+    "lint": "eslint \"apps/*/src/**/*.{ts,tsx}\""
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.0.0",
