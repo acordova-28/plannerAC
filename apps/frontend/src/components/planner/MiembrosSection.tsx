@@ -13,7 +13,10 @@ export default function MiembrosSection() {
   const removeMember     = usePlannerStore(s => s.removeMember)
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', flex:1, minHeight:0, animation:'secFadeUp .35s cubic-bezier(.16,1,.3,1) both' }}>
+    <div
+      style={{ display:'flex', flexDirection:'column', flex:1, minHeight:0, animation:'secFadeUp .35s cubic-bezier(.16,1,.3,1) both' }}
+      onAnimationEnd={e => { if (e.target === e.currentTarget) e.currentTarget.style.animation = 'none' }}
+    >
       <SectionHeader title="Miembros" subtitle={activeTeam.name} />
       <div style={{ flex:1, overflow:'auto' }}>
         <div style={{ padding:24, maxWidth:780 }}>

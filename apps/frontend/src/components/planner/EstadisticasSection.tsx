@@ -21,7 +21,10 @@ export default function EstadisticasSection() {
   }, [])
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', flex:1, minHeight:0, animation:'secFadeUp .35s cubic-bezier(.16,1,.3,1) both' }}>
+    <div
+      style={{ display:'flex', flexDirection:'column', flex:1, minHeight:0, animation:'secFadeUp .35s cubic-bezier(.16,1,.3,1) both' }}
+      onAnimationEnd={e => { if (e.target === e.currentTarget) e.currentTarget.style.animation = 'none' }}
+    >
       <header style={{ flexShrink:0, background:'#fff', borderBottom:'1px solid #e2e8f0', padding:'0 24px', height:62, display:'flex', alignItems:'center' }}>
         <div style={{ fontSize:16.5, fontWeight:700, color:'#0f172a', letterSpacing:'-.01em' }}>Estadísticas</div>
       </header>

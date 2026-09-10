@@ -14,7 +14,10 @@ export default function ModulosSection() {
   const deleteModule     = usePlannerStore(s => s.deleteModule)
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', flex:1, minHeight:0, animation:'secFadeUp .35s cubic-bezier(.16,1,.3,1) both' }}>
+    <div
+      style={{ display:'flex', flexDirection:'column', flex:1, minHeight:0, animation:'secFadeUp .35s cubic-bezier(.16,1,.3,1) both' }}
+      onAnimationEnd={e => { if (e.target === e.currentTarget) e.currentTarget.style.animation = 'none' }}
+    >
       <SectionHeader title="Módulos" subtitle={activeTeam.name} />
       <div style={{ flex:1, overflow:'auto' }}>
         <div style={{ padding:24, maxWidth:760 }}>

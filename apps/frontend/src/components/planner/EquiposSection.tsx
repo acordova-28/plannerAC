@@ -14,7 +14,10 @@ export default function EquiposSection() {
   const removeTeamMember = usePlannerStore(s => s.removeTeamMember)
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', flex:1, minHeight:0, animation:'secFadeUp .35s cubic-bezier(.16,1,.3,1) both' }}>
+    <div
+      style={{ display:'flex', flexDirection:'column', flex:1, minHeight:0, animation:'secFadeUp .35s cubic-bezier(.16,1,.3,1) both' }}
+      onAnimationEnd={e => { if (e.target === e.currentTarget) e.currentTarget.style.animation = 'none' }}
+    >
       <SectionHeader title="Mis Equipos" subtitle="Administración" />
       <div style={{ flex:1, overflow:'auto' }}>
         <div style={{ padding:24, maxWidth:880 }}>

@@ -99,7 +99,15 @@ export default function PlannerKanbanView() {
 
   const startDrag = (e: React.PointerEvent, cardId: string) => {
     if (e.button !== 0) return
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const el = e.currentTarget as HTMLElement
+    // Anular momentáneamente el transform de :hover antes de medir: la tarjeta
+    // flotante (.k-floating) nunca lo aplica, así que si se mide con el hover
+    // activo (translateY -2px, scale 1.01), el offset cursor→tarjeta queda mal
+    // calculado y la tarjeta flotante no se alinea con el puntero durante el drag.
+    const prevTransform = el.style.transform
+    el.style.transform = 'none'
+    const rect = el.getBoundingClientRect()
+    el.style.transform = prevTransform
     dragRef.current = {
       cardId,
       offsetX: e.clientX - rect.left,
