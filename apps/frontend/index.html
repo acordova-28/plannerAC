@@ -13,7 +13,12 @@
       ::-webkit-scrollbar { width: 10px; height: 10px; }
       ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; border: 2px solid transparent; background-clip: padding-box; }
       ::-webkit-scrollbar-thumb:hover { background: #94a3b8; background-clip: padding-box; }
-      @keyframes secFadeUp { from { opacity:0; transform:translateY(14px) } to { opacity:1; transform:translateY(0) } }
+      /* "to" usa transform:none (no translateY(0)): con animation-fill-mode "both" el
+         valor final queda aplicado de forma permanente, y cualquier transform distinto
+         de none -aunque sea la identidad- convierte a este elemento en el "containing
+         block" de sus descendientes position:fixed, rompiendo su posicionamiento
+         relativo al viewport (p. ej. la tarjeta flotante del drag en el kanban). */
+      @keyframes secFadeUp { from { opacity:0; transform:translateY(14px) } to { opacity:1; transform:none } }
     </style>
   </head>
   <body>
