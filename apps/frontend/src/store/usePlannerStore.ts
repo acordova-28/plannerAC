@@ -17,7 +17,7 @@ export type PlannerView  = 'table' | 'kanban' | 'gantt'
 export type NavSection   = 'tareas' | 'kanban' | 'gantt' | 'modulos' | 'miembros' | 'equipos' | 'stats' | 'config'
 export type GanttZoom    = 'days' | 'weeks'
 export type ColorBy      = 'module' | 'status'
-export type ColType      = 'text' | 'number' | 'date' | 'select' | 'checkbox'
+export type ColType      = 'text' | 'number' | 'date' | 'checkbox'
 
 export interface PlannerTask {
   id:          string
@@ -149,10 +149,16 @@ function apiToPriority(prioridad: string): TaskPriority {
 
 function colTypeToTipoDato(type: ColType): string {
   const map: Record<ColType, string> = {
-    text: 'texto', number: 'numero', date: 'fecha',
-    select: 'texto', checkbox: 'booleano',
+    text: 'texto', number: 'numero', date: 'fecha', checkbox: 'booleano',
   }
   return map[type]
+}
+
+function tipoDatoToColType(tipoDato: string): ColType {
+  const map: Record<string, ColType> = {
+    texto: 'text', numero: 'number', fecha: 'date', booleano: 'checkbox',
+  }
+  return map[tipoDato] ?? 'text'
 }
 
 function flatToPlannerTask(ft: FlatTask, teamId: string): PlannerTask {
@@ -254,7 +260,8 @@ interface PlannerStore {
   removeTeamMember:  (teamId: string, memberId: string) => Promise<void>
 }
 
-export const usePlannerStore = create<PlannerStore>()(
+function createPlannerStore() {
+  return create<PlannerStore>()(
   (set, get) => ({
     status:        'idle',
     view:          'table',
@@ -331,7 +338,7 @@ export const usePlannerStore = create<PlannerStore>()(
           color:       colorFromId(m.id),
         }))
 
-        const newColumns = campos.map(c => ({ id: c.id, name: c.nombre, type: c.tipoDato as ColType }))
+        const newColumns = campos.map(c => ({ id: c.id, name: c.nombre, type: tipoDatoToColType(c.tipoDato) }))
 
         set(s => ({
           status:        'idle',
@@ -596,4 +603,19 @@ export const usePlannerStore = create<PlannerStore>()(
       await removePlanMember(teamId, memberId)
     },
   })
-)
+  )
+}
+
+// Vite HMR: reuse the previous store instance across hot updates of this file
+// instead of recreating it from scratch, which would otherwise reset all state
+// (teams, tasks, etc.) to empty while already-mounted components keep rendering
+// against the new instance — leaving the app stuck on the loading screen.
+type PlannerStoreApi = ReturnType<typeof createPlannerStore>
+
+export const usePlannerStore: PlannerStoreApi =
+  (import.meta.hot?.data.plannerStore as PlannerStoreApi | undefined) ?? createPlannerStore()
+
+if (import.meta.hot) {
+  import.meta.hot.data.plannerStore = usePlannerStore
+  import.meta.hot.accept()
+}

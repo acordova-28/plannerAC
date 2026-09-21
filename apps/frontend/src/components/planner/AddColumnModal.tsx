@@ -30,7 +30,6 @@ export default function AddColumnModal() {
           <option value="text">Texto</option>
           <option value="number">Número</option>
           <option value="date">Fecha</option>
-          <option value="select">Select</option>
           <option value="checkbox">Checkbox</option>
         </select>
         <div style={{ display:'flex', gap:10 }}>
