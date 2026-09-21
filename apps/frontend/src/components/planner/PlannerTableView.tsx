@@ -1,5 +1,5 @@
 import {
-  usePlannerStore, PlannerTask, Member, STATUS_META, PRIORITY_META,
+  usePlannerStore, PlannerTask, Member, ColType, STATUS_META, PRIORITY_META,
   initials, computeEndISO, fmtShort, parseISO,
 } from '../../store/usePlannerStore'
 
@@ -103,7 +103,7 @@ interface GroupProps {
   tasks: PlannerTask[]
   open: boolean
   members: Member[]
-  customColumns: { id: string; name: string }[]
+  customColumns: { id: string; name: string; type: ColType }[]
   numStart: number
   numRef: { current: number }
   onToggle: () => void
@@ -156,7 +156,7 @@ interface RowProps {
   num: number
   mod: { color: string }
   members: Member[]
-  customColumns: { id: string }[]
+  customColumns: { id: string; type: ColType }[]
   onOpen: () => void
   onDelete: (e: React.MouseEvent) => void
   onCustomChange: (tid: string, col: string, val: string) => void
@@ -219,18 +219,79 @@ function TaskRow({ task, num, members, customColumns, onOpen, onDelete, onCustom
       </td>
       {customColumns.map(c => (
         <td key={c.id} style={{ padding:'7px 10px' }}>
-          <input
+          <CustomCell
+            type={c.type}
             value={(task.custom||{})[c.id]||''}
-            onChange={e => onCustomChange(task.id, c.id, e.target.value)}
-            onBlur={e => onCustomSave(task.id, c.id, e.target.value)}
-            onClick={e => e.stopPropagation()}
-            placeholder="—"
-            style={{ width:'100%', minWidth:80, border:'1px solid #e2e8f0', borderRadius:6, padding:'5px 8px', fontSize:12.5, color:'#334155', background:'#fff' }}
+            onChange={val => onCustomChange(task.id, c.id, val)}
+            onSave={val => onCustomSave(task.id, c.id, val)}
           />
         </td>
       ))}
       <td />
     </tr>
+  )
+}
+
+const customCellInputStyle: React.CSSProperties = {
+  width:'100%', minWidth:80, border:'1px solid #e2e8f0', borderRadius:6,
+  padding:'5px 8px', fontSize:12.5, color:'#334155', background:'#fff',
+}
+
+function CustomCell({ type, value, onChange, onSave }: {
+  type: ColType
+  value: string
+  onChange: (val: string) => void
+  onSave: (val: string) => void
+}) {
+  if (type === 'checkbox') {
+    const checked = value === 'true'
+    return (
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={e => { const v = e.target.checked ? 'true' : 'false'; onChange(v); onSave(v) }}
+        onClick={e => e.stopPropagation()}
+        style={{ width:16, height:16, cursor:'pointer' }}
+      />
+    )
+  }
+
+  if (type === 'date') {
+    return (
+      <input
+        type="date"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        onBlur={e => onSave(e.target.value)}
+        onClick={e => e.stopPropagation()}
+        style={customCellInputStyle}
+      />
+    )
+  }
+
+  if (type === 'number') {
+    return (
+      <input
+        type="number"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        onBlur={e => onSave(e.target.value)}
+        onClick={e => e.stopPropagation()}
+        placeholder="—"
+        style={customCellInputStyle}
+      />
+    )
+  }
+
+  return (
+    <input
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      onBlur={e => onSave(e.target.value)}
+      onClick={e => e.stopPropagation()}
+      placeholder="—"
+      style={customCellInputStyle}
+    />
   )
 }
 
