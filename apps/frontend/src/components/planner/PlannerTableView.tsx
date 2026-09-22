@@ -19,6 +19,7 @@ export default function PlannerTableView() {
   const saveCustomCell   = usePlannerStore(s => s.saveCustomCell)
   const deleteColumn     = usePlannerStore(s => s.deleteColumn)
   const startAddColumn   = usePlannerStore(s => s.startAddColumn)
+  const requestConfirm   = usePlannerStore(s => s.requestConfirm)
 
   const num = 0
 
@@ -38,16 +39,14 @@ export default function PlannerTableView() {
               <Th>Prioridad</Th>
               {customColumns.map(c => (
                 <Th key={c.id}>
-                  <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}>
-                    {c.name}
-                    <button
-                      onClick={() => deleteColumn(c.id)}
-                      title="Eliminar columna"
-                      style={{ display:'inline-flex', padding:2, background:'none', border:'none', cursor:'pointer', color:'#94a3b8', lineHeight:1 }}
-                    >
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                    </button>
-                  </span>
+                  <ColumnHeader
+                    name={c.name}
+                    onDelete={() => requestConfirm({
+                      title: '¿Eliminar columna?',
+                      message: `Se eliminará la columna "${c.name}" y sus valores en todas las tareas.`,
+                      onConfirm: () => deleteColumn(c.id),
+                    })}
+                  />
                 </Th>
               ))}
               <Th style={{ textAlign:'right' }}>
@@ -80,6 +79,7 @@ export default function PlannerTableView() {
                   onCustomChange={updateCustomCell}
                   onCustomSave={saveCustomCell}
                   numRef={{ current: num }}
+                  requestConfirm={requestConfirm}
                 />
               )
             })}
@@ -87,6 +87,21 @@ export default function PlannerTableView() {
         </table>
       </div>
     </div>
+  )
+}
+
+function ColumnHeader({ name, onDelete }: { name: string; onDelete: () => void }) {
+  return (
+    <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}>
+      {name}
+      <button
+        onClick={onDelete}
+        title="Eliminar columna"
+        style={{ display:'inline-flex', padding:2, background:'none', border:'none', borderRadius:4, cursor:'pointer', color:'#94a3b8', lineHeight:1 }}
+      >
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </span>
   )
 }
 
@@ -111,9 +126,10 @@ interface GroupProps {
   onDelete: (id: string) => void
   onCustomChange: (tid: string, col: string, val: string) => void
   onCustomSave:   (tid: string, col: string, val: string) => void
+  requestConfirm: (req: { title: string; message: string; confirmLabel?: string; onConfirm: () => void }) => void
 }
 
-function ModuleGroup({ mod, tasks, open, members, customColumns, onToggle, onOpenTask, onDelete, onCustomChange, onCustomSave }: GroupProps) {
+function ModuleGroup({ mod, tasks, open, members, customColumns, onToggle, onOpenTask, onDelete, onCustomChange, onCustomSave, requestConfirm }: GroupProps) {
   return (
     <>
       <tr
@@ -142,9 +158,10 @@ function ModuleGroup({ mod, tasks, open, members, customColumns, onToggle, onOpe
           members={members}
           customColumns={customColumns}
           onOpen={() => onOpenTask(t.id)}
-          onDelete={(e) => { e.stopPropagation(); onDelete(t.id) }}
+          onDelete={() => onDelete(t.id)}
           onCustomChange={onCustomChange}
           onCustomSave={onCustomSave}
+          requestConfirm={requestConfirm}
         />
       ))}
     </>
@@ -158,16 +175,26 @@ interface RowProps {
   members: Member[]
   customColumns: { id: string; type: ColType }[]
   onOpen: () => void
-  onDelete: (e: React.MouseEvent) => void
+  onDelete: () => void
   onCustomChange: (tid: string, col: string, val: string) => void
   onCustomSave:   (tid: string, col: string, val: string) => void
+  requestConfirm: (req: { title: string; message: string; confirmLabel?: string; onConfirm: () => void }) => void
 }
 
-function TaskRow({ task, num, members, customColumns, onOpen, onDelete, onCustomChange, onCustomSave }: RowProps) {
+function TaskRow({ task, num, members, customColumns, onOpen, onDelete, onCustomChange, onCustomSave, requestConfirm }: RowProps) {
   const assignee  = members.find(m => m.id === task.assigneeId)
   const endISO    = computeEndISO(task, members)
   const st        = STATUS_META[task.status]
   const pr        = PRIORITY_META[task.priority]
+
+  function handleDelete(e: React.MouseEvent) {
+    e.stopPropagation()
+    requestConfirm({
+      title: '¿Eliminar tarea?',
+      message: `Se eliminará "${task.name || 'esta tarea'}" permanentemente. Esta acción no se puede deshacer.`,
+      onConfirm: onDelete,
+    })
+  }
 
   return (
     <tr
@@ -180,7 +207,7 @@ function TaskRow({ task, num, members, customColumns, onOpen, onDelete, onCustom
         <span style={{ fontWeight:500, color:'#1e293b' }}>{task.name}</span>
         <span className="row-actions" style={{ opacity:0, transition:'opacity .12s', position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', display:'flex', gap:4 }}>
           <button
-            onClick={onDelete}
+            onClick={handleDelete}
             title="Eliminar"
             style={{ display:'flex', padding:5, background:'#fff', border:'1px solid #e2e8f0', borderRadius:6, cursor:'pointer' }}
           >

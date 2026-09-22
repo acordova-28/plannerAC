@@ -61,9 +61,21 @@ export interface CustomColumn {
   type: ColType
 }
 
+export interface Toast {
+  id:      string
+  message: string
+}
+
+export interface ConfirmRequest {
+  title:         string
+  message:       string
+  confirmLabel?: string
+  onConfirm:     () => void
+}
+
 export const STATUS_META: Record<TaskStatus, { label: string; bg: string; fg: string; dot: string }> = {
   todo:     { label: 'Por hacer',   bg: '#eef1f5', fg: '#475569', dot: '#94a3b8' },
-  progress: { label: 'En progreso', bg: '#e0edff', fg: '#1d4ed8', dot: '#2563eb' },
+  progress: { label: 'En progreso', bg: '#e0e7ff', fg: '#3b5bdb', dot: '#3b5bdb' },
   blocked:  { label: 'Bloqueado',   bg: '#fde7e7', fg: '#b91c1c', dot: '#dc2626' },
   done:     { label: 'Completado',  bg: '#dcf5e6', fg: '#15803d', dot: '#16a34a' },
 }
@@ -193,6 +205,8 @@ interface PlannerStore {
   dragId:          string | null
   dragOverCol:     string | null
   dragOverTaskId:  string | null
+  toasts:          Toast[]
+  confirmRequest:  ConfirmRequest | null
   addingColumn:  boolean
   newColName:    string
   newColType:    ColType
@@ -228,6 +242,9 @@ interface PlannerStore {
   setDragOverTask:   (id: string | null) => void
   dropOnColumn:      (status: TaskStatus, taskId?: string) => void
   dropOnTask:        (targetTaskId: string) => void
+  dismissToast:      (id: string) => void
+  requestConfirm:    (req: ConfirmRequest) => void
+  resolveConfirm:    (confirmed: boolean) => void
 
   setGanttZoom:      (zoom: GanttZoom) => void
   shiftGantt:        (delta: number) => void
@@ -276,6 +293,8 @@ function createPlannerStore() {
     dragId:         null,
     dragOverCol:    null,
     dragOverTaskId: null,
+    toasts:         [],
+    confirmRequest: null,
     addingColumn:  false,
     newColName:    '',
     newColType:    'text',
@@ -453,11 +472,27 @@ function createPlannerStore() {
     setDragId:        (id)  => set({ dragId: id }),
     setDragOverCol:   (col) => set({ dragOverCol: col }),
     setDragOverTask:  (id)  => set({ dragOverTaskId: id }),
+
+    dismissToast: (id) => set(s => ({ toasts: s.toasts.filter(t => t.id !== id) })),
+
+    requestConfirm: (req) => set({ confirmRequest: req }),
+    resolveConfirm: (confirmed) => {
+      const req = get().confirmRequest
+      set({ confirmRequest: null })
+      if (confirmed) req?.onConfirm()
+    },
+
     dropOnColumn: (status, taskId) => {
       const id = taskId ?? get().dragId
       if (!id) return
+      const prevTasks = get().tasks
       set(s => ({ tasks: s.tasks.map(t => t.id === id ? { ...t, status } : t), dragId: null, dragOverCol: null, dragOverTaskId: null }))
-      updateTarea(id, { estado: statusToEstado(status) })
+      updateTarea(id, { estado: statusToEstado(status) }).catch(() => {
+        set(s => ({
+          tasks: prevTasks,
+          toasts: [...s.toasts, { id: `toast-${Date.now()}`, message: 'No se pudo mover la tarea — se revirtió el cambio.' }],
+        }))
+      })
     },
     dropOnTask: (targetId) => {
       const draggedId = get().dragId
@@ -465,15 +500,15 @@ function createPlannerStore() {
         set({ dragId: null, dragOverTaskId: null, dragOverCol: null })
         return
       }
-      const tasks   = get().tasks
-      const dragged = tasks.find(t => t.id === draggedId)
-      const target  = tasks.find(t => t.id === targetId)
+      const prevTasks = get().tasks
+      const dragged   = prevTasks.find(t => t.id === draggedId)
+      const target    = prevTasks.find(t => t.id === targetId)
       if (!dragged || !target) return
 
       const statusChanged  = dragged.status !== target.status
       const updatedDragged = statusChanged ? { ...dragged, status: target.status } : dragged
 
-      const withoutDragged = tasks.filter(t => t.id !== draggedId)
+      const withoutDragged = prevTasks.filter(t => t.id !== draggedId)
       const targetIdx = withoutDragged.findIndex(t => t.id === targetId)
       const newTasks = [
         ...withoutDragged.slice(0, targetIdx),
@@ -482,9 +517,10 @@ function createPlannerStore() {
       ]
       set({ tasks: newTasks, dragId: null, dragOverTaskId: null, dragOverCol: null })
 
-      if (statusChanged) {
-        updateTarea(draggedId, { estado: statusToEstado(target.status) })
-      }
+      const rollback = () => set(s => ({
+        tasks: prevTasks,
+        toasts: [...s.toasts, { id: `toast-${Date.now()}`, message: 'No se pudo mover la tarea — se revirtió el cambio.' }],
+      }))
 
       const affected = new Set([dragged.moduleId, target.moduleId])
       const items: ReorderItem[] = []
@@ -493,7 +529,12 @@ function createPlannerStore() {
           items.push({ taskId: t.id, moduloId: modId, orden: i })
         })
       })
-      reorderTasks(get().activeTeamId, items)
+
+      const statusUpdate = statusChanged
+        ? updateTarea(draggedId, { estado: statusToEstado(target.status) })
+        : Promise.resolve()
+
+      Promise.all([statusUpdate, reorderTasks(get().activeTeamId, items)]).catch(rollback)
     },
 
     setGanttZoom: (zoom)  => set({ ganttZoom: zoom, ganttOffset: 0 }),

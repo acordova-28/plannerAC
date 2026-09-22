@@ -12,13 +12,22 @@ export default function TaskModal() {
   const members      = usePlannerStore(s => s.members)
   const activeTeam   = usePlannerStore(s => s.activeTeam)()
   const teamMembers  = members.filter(m => (activeTeam?.memberIds ?? []).includes(m.id))
-  const closeModal  = usePlannerStore(s => s.closeModal)
-  const updateDraft = usePlannerStore(s => s.updateDraft)
-  const saveDraft   = usePlannerStore(s => s.saveDraft)
-  const deleteDraft = usePlannerStore(s => s.deleteDraft)
+  const closeModal      = usePlannerStore(s => s.closeModal)
+  const updateDraft     = usePlannerStore(s => s.updateDraft)
+  const saveDraft       = usePlannerStore(s => s.saveDraft)
+  const deleteDraft     = usePlannerStore(s => s.deleteDraft)
+  const requestConfirm  = usePlannerStore(s => s.requestConfirm)
 
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+
+  function handleDeleteClick() {
+    requestConfirm({
+      title: '¿Eliminar tarea?',
+      message: `Se eliminará "${draft?.name || 'esta tarea'}" permanentemente. Esta acción no se puede deshacer.`,
+      onConfirm: deleteDraft,
+    })
+  }
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') closeModal() }
@@ -178,7 +187,10 @@ export default function TaskModal() {
         {/* Footer */}
         <div style={{ display:'flex', alignItems:'center', gap:10, padding:'16px 24px', borderTop:'1px solid #f1f5f9', marginTop:8 }}>
           {isEdit && (
-            <button onClick={deleteDraft} style={{ display:'flex', alignItems:'center', gap:7, background:'#fff', color:'#dc2626', border:'1px solid #fecaca', borderRadius:9, padding:'9px 14px', fontSize:13, fontWeight:600, cursor:'pointer' }}>
+            <button
+              onClick={handleDeleteClick}
+              style={{ display:'flex', alignItems:'center', gap:7, background:'#fff', color:'#dc2626', border:'1px solid #fecaca', borderRadius:9, padding:'9px 14px', fontSize:13, fontWeight:600, cursor:'pointer' }}
+            >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
               Eliminar
             </button>

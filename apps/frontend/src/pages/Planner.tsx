@@ -9,6 +9,8 @@ import EquiposSection       from '../components/planner/EquiposSection'
 import EstadisticasSection  from '../components/planner/EstadisticasSection'
 import TaskModal            from '../components/planner/TaskModal'
 import AddColumnModal   from '../components/planner/AddColumnModal'
+import ToastStack        from '../components/planner/ToastStack'
+import ConfirmDialog     from '../components/planner/ConfirmDialog'
 
 const VALID_SECTIONS: NavSection[] = ['tareas', 'kanban', 'gantt', 'modulos', 'miembros', 'equipos', 'stats', 'config']
 
@@ -74,6 +76,8 @@ export default function Planner() {
 
       {modalOpen    && <TaskModal />}
       {addingColumn && <AddColumnModal />}
+      <ToastStack />
+      <ConfirmDialog />
     </div>
   )
 }

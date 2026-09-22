@@ -129,11 +129,10 @@ export default function PlannerKanbanView() {
   return (
     <div
       style={{
-        padding: '22px 24px',
+        padding: '20px 22px',
         display: 'flex',
-        gap: 16,
+        gap: 14,
         alignItems: 'flex-start',
-        minWidth: 'max-content',
         position: 'relative',
         userSelect: isDragging ? 'none' : 'auto',
       }}
@@ -148,7 +147,7 @@ export default function PlannerKanbanView() {
             key={status}
             data-status={status}
             style={{
-              width: 288, flexShrink: 0, borderRadius: 12, padding: 12,
+              flex: '1 1 240px', minWidth: 220, maxWidth: 320, borderRadius: 14, padding: 12,
               display: 'flex', flexDirection: 'column', gap: 10,
               background: colOver ? '#eef3ff' : '#f1f5f9',
               boxShadow: colOver ? 'inset 0 0 0 2px #748ffc' : 'inset 0 0 0 1px transparent',
@@ -189,6 +188,7 @@ export default function PlannerKanbanView() {
                       members={members}
                       modules={modules}
                       onPointerDown={e => startDrag(e, card.id)}
+                      onOpen={() => openTask(card.id)}
                     />
               )
 

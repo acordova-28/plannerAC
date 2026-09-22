@@ -1,4 +1,4 @@
-import { usePlannerStore, PALETTE } from '../../store/usePlannerStore'
+import { usePlannerStore, PALETTE, type PlannerModule } from '../../store/usePlannerStore'
 
 export default function ModulosSection() {
   const modules          = usePlannerStore(s => s.modules)
@@ -12,6 +12,7 @@ export default function ModulosSection() {
   const updateModuleName = usePlannerStore(s => s.updateModuleName)
   const updateModuleColor= usePlannerStore(s => s.updateModuleColor)
   const deleteModule     = usePlannerStore(s => s.deleteModule)
+  const requestConfirm   = usePlannerStore(s => s.requestConfirm)
 
   return (
     <div
@@ -32,32 +33,63 @@ export default function ModulosSection() {
             {teamModules.map(m => {
               const count = teamTasks.filter(t => t.moduleId === m.id).length
               return (
-                <div key={m.id} style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:11, padding:'14px 16px', display:'flex', alignItems:'center', gap:14, boxShadow:'0 4px 16px rgba(15,23,42,.08)' }}>
-                  {/* Color swatches */}
-                  <div style={{ display:'flex', gap:5 }}>
-                    {PALETTE.map(c => (
-                      <button
-                        key={c}
-                        onClick={() => updateModuleColor(m.id, c)}
-                        style={{ width:20, height:20, borderRadius:6, cursor:'pointer', background:c, border:'none', outline: m.color === c ? '2px solid #0f172a' : '1px solid rgba(0,0,0,.08)', outlineOffset:1 }}
-                      />
-                    ))}
-                  </div>
-                  <input
-                    value={m.name}
-                    onChange={e => updateModuleName(m.id, e.target.value)}
-                    style={{ flex:1, border:'1px solid transparent', borderRadius:7, padding:'7px 10px', fontSize:14, fontWeight:600, color:'#1e293b', background:'#f8fafc', outline:'none' }}
-                  />
-                  <span style={{ fontSize:12, color:'#64748b', fontWeight:500, whiteSpace:'nowrap' }}>{count} tareas</span>
-                  <button onClick={() => deleteModule(m.id)} style={deleteBtnStyle}>
-                    <TrashIcon />
-                  </button>
-                </div>
+                <ModuleRow
+                  key={m.id}
+                  mod={m}
+                  count={count}
+                  updateModuleName={updateModuleName}
+                  updateModuleColor={updateModuleColor}
+                  deleteModule={deleteModule}
+                  requestConfirm={requestConfirm}
+                />
               )
             })}
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function ModuleRow({ mod, count, updateModuleName, updateModuleColor, deleteModule, requestConfirm }: {
+  mod: PlannerModule
+  count: number
+  updateModuleName:  (id: string, name: string) => void
+  updateModuleColor: (id: string, color: string) => void
+  deleteModule:      (id: string) => void
+  requestConfirm:    (req: { title: string; message: string; confirmLabel?: string; onConfirm: () => void }) => void
+}) {
+  function handleDelete() {
+    requestConfirm({
+      title: '¿Eliminar módulo?',
+      message: count > 0
+        ? `Se eliminará "${mod.name}" y sus tareas. Esta acción no se puede deshacer.`
+        : `Se eliminará "${mod.name}". Esta acción no se puede deshacer.`,
+      onConfirm: () => deleteModule(mod.id),
+    })
+  }
+
+  return (
+    <div style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:11, padding:'14px 16px', display:'flex', alignItems:'center', gap:14, boxShadow:'0 4px 16px rgba(15,23,42,.08)' }}>
+      {/* Color swatches */}
+      <div style={{ display:'flex', gap:5 }}>
+        {PALETTE.map(c => (
+          <button
+            key={c}
+            onClick={() => updateModuleColor(mod.id, c)}
+            style={{ width:20, height:20, borderRadius:6, cursor:'pointer', background:c, border:'none', outline: mod.color === c ? '2px solid #0f172a' : '1px solid rgba(0,0,0,.08)', outlineOffset:1 }}
+          />
+        ))}
+      </div>
+      <input
+        value={mod.name}
+        onChange={e => updateModuleName(mod.id, e.target.value)}
+        style={{ flex:1, border:'1px solid transparent', borderRadius:7, padding:'7px 10px', fontSize:14, fontWeight:600, color:'#1e293b', background:'#f8fafc', outline:'none' }}
+      />
+      <span style={{ fontSize:12, color:'#64748b', fontWeight:500, whiteSpace:'nowrap' }}>{count} tareas</span>
+      <button onClick={handleDelete} title="Eliminar módulo" style={deleteBtnStyle}>
+        <TrashIcon />
+      </button>
     </div>
   )
 }
@@ -75,6 +107,6 @@ export function SectionHeader({ title, subtitle }: { title: string; subtitle: st
 
 const addBtnStyle: React.CSSProperties = { marginLeft:'auto', display:'flex', alignItems:'center', gap:7, background:'#3b5bdb', color:'#fff', border:'none', borderRadius:9, padding:'9px 14px', fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }
 const deleteBtnStyle: React.CSSProperties = { display:'flex', padding:7, background:'#fff', border:'1px solid #fecaca', borderRadius:7, cursor:'pointer' }
-function TrashIcon() {
-  return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+function TrashIcon({ color = '#dc2626' }: { color?: string }) {
+  return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
 }
