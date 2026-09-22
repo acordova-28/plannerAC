@@ -184,8 +184,10 @@ export default function PlannerSidebar() {
         flexShrink: 0,
         transition: 'padding 0.22s ease',
       }}>
-        <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#e2e8f0', flexShrink: 0 }}>
-          {user ? initials(user.nombre) : 'AD'}
+        <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#e2e8f0', flexShrink: 0, overflow: 'hidden' }}>
+          {user?.picture
+            ? <img src={user.picture} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            : (user ? initials(user.nombre) : 'AD')}
         </div>
         <div style={{ ...labelStyle, minWidth: 0, flex: 1 }}>
           <div style={{ fontSize: 12.5, fontWeight: 600, color: '#e2e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.nombre || 'Admin'}</div>

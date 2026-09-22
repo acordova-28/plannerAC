@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/useAuthStore'
 import LoginPage from './pages/LoginPage'
+import AuthCallback from './pages/AuthCallback'
 import Planner from './pages/Planner'
 import NotFound from './pages/NotFound'
 
@@ -13,6 +14,10 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />,
+  },
+  {
+    path: '/auth/callback',
+    element: <AuthCallback />,
   },
   {
     path: '/',
