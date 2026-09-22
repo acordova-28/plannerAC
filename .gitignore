@@ -9,3 +9,4 @@ apps/frontend/dist/
 apps/backend/dist/
 .claude/
 CLAUDE.md
+.impeccable/
