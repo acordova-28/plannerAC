@@ -5,6 +5,12 @@
 -- Ejecutar con:
 --   mysql -u root -p < schema_wuolla.sql
 --
+-- NOTA: requiere SET NAMES utf8mb4 explícito (ver abajo) — sin esto,
+-- el cliente mysql que corre este script vía docker-entrypoint-initdb.d
+-- asume latin1 y los acentos de los INSERT de ejemplo quedan mojibake
+-- aunque las columnas ya sean utf8mb4 (bug real detectado y corregido
+-- en sesión: tareas de ejemplo con "ConfiguraciÃ³n" en vez de "Configuración").
+--
 -- Convenciones:
 --   · PKs: CHAR(36) DEFAULT (UUID())  — MySQL 8.0.13+
 --     TypeORM (@PrimaryGeneratedColumn('uuid')) genera el UUID
@@ -36,6 +42,8 @@
 -- ============================================================
 -- SECCIÓN 0: Base de datos
 -- ============================================================
+
+SET NAMES utf8mb4;
 
 CREATE DATABASE IF NOT EXISTS wuolla_planner
   CHARACTER SET utf8mb4

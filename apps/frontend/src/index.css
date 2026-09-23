@@ -4,10 +4,10 @@
 .k-card {
   background: #fff;
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  border-radius: 14px;
   padding: 12px;
   cursor: grab;
-  box-shadow: 0 1px 3px rgba(15,23,42,.05);
+  box-shadow: 0 2px 8px rgba(15,23,42,.06);
   transition:
     box-shadow .22s cubic-bezier(.2,.8,.2,1),
     transform  .22s cubic-bezier(.2,.8,.2,1),
@@ -25,16 +25,41 @@
   cursor: grabbing !important;
   pointer-events: none;
 }
+.k-card:focus-visible {
+  outline: 2px solid #4c6ef5;
+  outline-offset: 2px;
+}
 .k-origin-ph {
-  border-radius: 10px;
+  border-radius: 14px;
   border: 2px dashed #e2e8f0;
   background: rgba(241,245,249,.7);
 }
 .k-drop-ph {
-  border-radius: 10px;
+  border-radius: 14px;
   border: 2px dashed #748ffc;
   background: rgba(59,91,219,.05);
   animation: kDropPhIn .16s cubic-bezier(.2,.8,.2,1) both;
+}
+
+/* Scroll container (kanban/table/gantt) — themed scrollbar instead of raw OS default */
+.planner-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+.planner-scroll::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+.planner-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.planner-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+  border: 2px solid #f8fafc;
+}
+.planner-scroll::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 @keyframes kLiftOff {
   0%   { transform: scale(1);    box-shadow: 0 1px 3px rgba(15,23,42,.05); }

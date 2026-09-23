@@ -20,15 +20,11 @@ git clone https://github.com/acordova-28/plannerAC.git
 cd plannerAC                                # única vez que cambiamos de carpeta
 ```
 
-**Variables de entorno — hay dos `.env` distintos, cada uno para un consumidor distinto:**
+**Variables de entorno — un único archivo, `apps/backend/.env`:**
 
-| Archivo | Quién lo lee | Para qué |
-|---------|--------------|----------|
-| `.env` (raíz) | `docker compose` | Variables que se inyectan en `docker-compose.yml` (contraseña de MySQL, puerto expuesto, JWT/LDAP si levantas todo dockerizado) |
-| `apps/backend/.env` | NestJS directamente (`ConfigModule`) | Config del backend cuando corre **en tu máquina**, no en un contenedor — por eso apunta a `localhost:3307` (el puerto que Docker expone al host), no a `db:3306` (que es la ruta interna que usa el backend *cuando también* corre dockerizado) |
+Lo lee NestJS directamente (`ConfigModule`) cuando el backend corre en tu máquina, y también `docker-compose.yml` (vía `env_file`) cuando corre dockerizado — ahí Docker Compose pisa solo las claves que deben ser distintas dentro de la red de contenedores (`DB_HOST=db` en vez de `localhost`, etc.), todo lo demás (JWT, LDAP, Azure, `DEV_USERS`) sale del mismo archivo.
 
 ```bash
-cp .env.example .env
 cp apps/backend/.env.example apps/backend/.env
 ```
 
@@ -74,8 +70,8 @@ docker compose down -v
 Útil para probar el build de producción completo o para desplegar, sin instalar Node ni MySQL en la máquina.
 
 ```bash
-cp .env.example .env
-# Editar .env: credenciales de LDAP si aplica, o dejarlas vacías para usar DEV_USERS
+cp apps/backend/.env.example apps/backend/.env
+# Editar apps/backend/.env: credenciales de LDAP si aplica, o dejarlas vacías para usar DEV_USERS
 docker compose up -d --build
 ```
 
@@ -86,8 +82,8 @@ docker compose up -d --build
 | MySQL    | localhost:3307 → 3306 en el contenedor | Solo si necesitas conectar Workbench/DBeaver directamente |
 
 Notas:
-- El puerto de MySQL se publica en `3307` por defecto (`DB_HOST_PORT` en `.env`) para no chocar con un MySQL local en `3306`.
-- Con `NODE_ENV=development` (default en `.env.example`), si LDAP no está configurado o no responde, el login cae al fallback `DEV_USERS` (por defecto `admin:admin1`, `demo:demo`). En `NODE_ENV=production` ese fallback queda deshabilitado y se requiere LDAP real.
+- El puerto de MySQL se publica fijo en `3307` (`docker-compose.yml`) para no chocar con un MySQL local en `3306`.
+- Con `NODE_ENV=development` (default en `apps/backend/.env.example`), si LDAP no está configurado o no responde, el login cae al fallback `DEV_USERS` (por defecto `admin:admin1`, `demo:demo`). En `NODE_ENV=production` ese fallback queda deshabilitado y se requiere LDAP real.
 
 ```bash
 docker compose down      # parar (conserva datos)

@@ -108,5 +108,9 @@ export async function updateTarea(id: string, changes: UpdateTareaInput): Promis
   if (changes.description !== undefined)   dto.description        = changes.description
   if (changes.notes !== undefined)         dto.notes              = changes.notes
   if (!Object.keys(dto).length) return
-  await apiFetch(`/api/tareas/${id}`, { method: 'PUT', body: JSON.stringify(dto) })
+  const res = await apiFetch(`/api/tareas/${id}`, { method: 'PUT', body: JSON.stringify(dto) })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.message ?? `Error ${res.status} al actualizar la tarea`)
+  }
 }

@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { LdapService } from './ldap.service';
+import { MicrosoftAuthService } from './microsoft-auth.service';
 import { PlansService } from '../plans/plans.service';
 
 @Injectable()
@@ -17,36 +18,56 @@ export class AuthService {
 
   constructor(
     private readonly ldap: LdapService,
+    private readonly microsoftAuth: MicrosoftAuthService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly plansService: PlansService,
     @InjectRepository(User) private readonly userRepo: Repository<User>,
   ) {}
 
-  async login(username: string, password: string) {
-    // 1. Autenticar con LDAP (o fallback DEV_USERS en development)
-    const ldapUser = await this.ldap.authenticate(username, password);
-
-    // 2. Registrar / actualizar el usuario en la BD local
-    let user: User;
+  private async findOrCreateUser(
+    where: { ldapUid?: string; email?: string },
+    data: { ldapUid: string; nombre: string; email: string },
+    contextLabel: string,
+  ): Promise<User> {
     try {
-      user = await this.userRepo.findOne({ where: { ldapUid: username } });
-      if (!user) {
-        user = this.userRepo.create({
-          ldapUid: ldapUser.username,
-          nombre: ldapUser.nombre,
-          email: ldapUser.email,
+      let user = where.email
+        ? await this.userRepo.findOne({ where: { email: where.email } })
+        : null;
+      if (!user && where.ldapUid) {
+        user = await this.userRepo.findOne({
+          where: { ldapUid: where.ldapUid },
         });
+      }
+      if (!user) {
+        user = this.userRepo.create(data);
         user = await this.userRepo.save(user);
       }
+      return user;
     } catch (err) {
       this.logger.error(
-        `Error de BD durante el login del usuario "${username}": ${(err as Error).message}`,
+        `Error de BD durante el login de "${contextLabel}": ${(err as Error).message}`,
       );
       throw new InternalServerErrorException(
         'Error interno al procesar el login',
       );
     }
+  }
+
+  async login(username: string, password: string) {
+    // 1. Autenticar con LDAP (o fallback DEV_USERS en development)
+    const ldapUser = await this.ldap.authenticate(username, password);
+
+    // 2. Registrar / actualizar el usuario en la BD local
+    const user = await this.findOrCreateUser(
+      { ldapUid: username },
+      {
+        ldapUid: ldapUser.username,
+        nombre: ldapUser.nombre,
+        email: ldapUser.email,
+      },
+      username,
+    );
 
     // Sincronizar grupos LDAP → planes automáticamente
     const planGroupBase = this.config.get<string>('LDAP_PLANS_BASE', '');
@@ -86,11 +107,35 @@ export class AuthService {
       }
     }
 
+    return this.issueSession(user, ldapUser.roles);
+  }
+
+  async loginWithMicrosoft(code: string) {
+    const msUser = await this.microsoftAuth.acquireTokenByCode(code);
+
+    // Empareja por email para fusionar con una cuenta ya creada vía LDAP;
+    // si no existe ninguna, se crea una nueva usando el username de Microsoft.
+    const user = await this.findOrCreateUser(
+      { email: msUser.email, ldapUid: msUser.username },
+      {
+        ldapUid: msUser.username,
+        nombre: msUser.nombre,
+        email: msUser.email,
+      },
+      msUser.username,
+    );
+
+    // El login con Microsoft no trae grupos de AD, por lo que no hay
+    // sincronización automática de planes aquí (a diferencia del flujo LDAP).
+    return this.issueSession(user, [], msUser.picture);
+  }
+
+  private issueSession(user: User, roles: string[], picture?: string) {
     const payload = {
       sub: user.ldapUid,
       nombre: user.nombre,
       email: user.email,
-      roles: ldapUser.roles,
+      roles,
     };
 
     return {
@@ -100,6 +145,7 @@ export class AuthService {
         ldapUid: user.ldapUid,
         nombre: user.nombre,
         email: user.email,
+        picture,
       },
     };
   }

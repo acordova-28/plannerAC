@@ -5,9 +5,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../users/entities/user.entity';
 import { LdapService } from './ldap.service';
+import { MicrosoftAuthService } from './microsoft-auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
+import { MicrosoftAuthController } from './microsoft-auth.controller';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { PlansModule } from '../plans/plans.module';
 
@@ -27,8 +29,14 @@ import { PlansModule } from '../plans/plans.module';
     TypeOrmModule.forFeature([User]),
     PlansModule,
   ],
-  providers: [LdapService, JwtStrategy, AuthService, JwtAuthGuard],
-  controllers: [AuthController],
+  providers: [
+    LdapService,
+    MicrosoftAuthService,
+    JwtStrategy,
+    AuthService,
+    JwtAuthGuard,
+  ],
+  controllers: [AuthController, MicrosoftAuthController],
   exports: [JwtAuthGuard, AuthService],
 })
 export class AuthModule {}

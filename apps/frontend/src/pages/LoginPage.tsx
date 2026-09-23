@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuthStore } from '../store/useAuthStore'
+import { getAuthMethodsApi, type AuthMethods } from '../api/auth.api'
 
 const CSS = `
   .lp-root {
@@ -283,6 +284,22 @@ const CSS = `
   }
   .lp-input:focus ~ .lp-input-icon { color: #4c6ef5; }
 
+  .lp-input-toggle {
+    position: absolute;
+    right: 14px; top: 50%;
+    transform: translateY(-50%);
+    color: #ced4da;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    cursor: pointer;
+    line-height: 0;
+  }
+  .lp-input-toggle:hover { color: #495057; }
+  .lp-input:focus ~ .lp-input-toggle { color: #4c6ef5; }
+
   /* Submit */
   .lp-btn {
     width: 100%;
@@ -315,6 +332,37 @@ const CSS = `
     border-radius: 50%;
     animation: lpSpin .65s linear infinite;
   }
+
+  /* Microsoft button + divider */
+  .lp-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 20px 0;
+    color: #adb5bd;
+    font-size: 12px;
+  }
+  .lp-divider::before, .lp-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e9ecef;
+  }
+  .lp-ms-btn {
+    width: 100%;
+    padding: 12px;
+    background: #fff;
+    color: #1a1a2e;
+    border: 1.5px solid #e9ecef;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: border-color .2s, background .2s;
+  }
+  .lp-ms-btn:hover { border-color: #adb5bd; background: #f8f9fa; }
 
   /* Bottom note */
   .lp-bottom {
@@ -349,12 +397,30 @@ export default function LoginPage() {
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [methods, setMethods] = useState<AuthMethods>({ ldap: true, microsoft: false })
+  const [oauthError, setOauthError] = useState<string | null>(null)
+
+  useEffect(() => {
+    getAuthMethodsApi().then(setMethods)
+
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('error') === 'ms_auth_failed') {
+      setOauthError('No se pudo iniciar sesión con Microsoft. Intenta de nuevo.')
+    } else if (params.get('error') === 'ms_auth_state') {
+      setOauthError('La sesión de inicio expiró. Intenta de nuevo.')
+    }
+  }, [])
 
   if (isValid) return <Navigate to="/" replace />
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     login(username, password)
+  }
+
+  const handleMicrosoftLogin = () => {
+    window.location.href = '/api/auth/microsoft'
   }
 
   return (
@@ -489,8 +555,11 @@ export default function LoginPage() {
             <h1 className="lp-heading">¡Hola de nuevo!</h1>
             <p className="lp-subhead">Ingresa con tus credenciales corporativas<br />para continuar</p>
 
-            {error && <div className="lp-error" key={error}>{error}</div>}
+            {(error || oauthError) && (
+              <div className="lp-error" key={error ?? oauthError}>{error ?? oauthError}</div>
+            )}
 
+            {methods.ldap && (
             <form onSubmit={handleSubmit} noValidate>
               <div className="lp-field">
                 <div className="lp-input-wrap">
@@ -517,7 +586,7 @@ export default function LoginPage() {
                 <div className="lp-input-wrap">
                   <input
                     id="password"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={e => { setPassword(e.target.value); clearError() }}
                     placeholder="Contraseña"
@@ -525,11 +594,25 @@ export default function LoginPage() {
                     required
                     className="lp-input"
                   />
-                  <span className="lp-input-icon">
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
-                  </span>
+                  <button
+                    type="button"
+                    className="lp-input-toggle"
+                    onClick={() => setShowPassword(v => !v)}
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                        <line x1="1" y1="1" x2="23" y2="23"/>
+                      </svg>
+                    ) : (
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    )}
+                  </button>
                 </div>
               </div>
 
@@ -546,10 +629,27 @@ export default function LoginPage() {
                 ) : 'Iniciar sesión'}
               </button>
             </form>
+            )}
 
-            <p className="lp-bottom">
-              Acceso mediante credenciales corporativas&nbsp;·&nbsp;<span>LDAP</span>
-            </p>
+            {methods.ldap && methods.microsoft && (
+              <div className="lp-divider">o</div>
+            )}
+
+            {methods.microsoft && (
+              <button
+                type="button"
+                className="lp-ms-btn"
+                onClick={handleMicrosoftLogin}
+              >
+                <svg width="18" height="18" viewBox="0 0 21 21">
+                  <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                  <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                  <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                  <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                </svg>
+                Iniciar sesión con Microsoft
+              </button>
+            )}
           </div>
         </div>
 

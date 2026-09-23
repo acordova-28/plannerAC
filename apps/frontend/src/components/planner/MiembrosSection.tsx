@@ -1,4 +1,4 @@
-import { usePlannerStore, initials } from '../../store/usePlannerStore'
+import { usePlannerStore, initials, type Member } from '../../store/usePlannerStore'
 import { SectionHeader } from './ModulosSection'
 
 export default function MiembrosSection() {
@@ -11,6 +11,7 @@ export default function MiembrosSection() {
   const teamTasks        = allTasks.filter(t => t.teamId === activeTeamId)
   const updateMemberHours= usePlannerStore(s => s.updateMemberHours)
   const removeMember     = usePlannerStore(s => s.removeMember)
+  const requestConfirm   = usePlannerStore(s => s.requestConfirm)
 
   return (
     <div
@@ -27,32 +28,66 @@ export default function MiembrosSection() {
             {teamMembers.map(m => {
               const taskCount = teamTasks.filter(t => t.assigneeId === m.id).length
               return (
-                <div key={m.id} style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:11, padding:'14px 16px', display:'flex', alignItems:'center', gap:14, boxShadow:'0 4px 16px rgba(15,23,42,.08)' }}>
-                  <span style={{ width:38, height:38, borderRadius:'50%', background:m.color, display:'inline-flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:700, color:'#fff', flexShrink:0 }}>
-                    {initials(m.name)}
-                  </span>
-                  <span style={{ flex:1, padding:'7px 10px', fontSize:14, fontWeight:600, color:'#1e293b' }}>
-                    {m.name}
-                  </span>
-                  <div style={{ display:'flex', alignItems:'center', gap:8, background:'#f1f5f9', border:'1px solid #e2e8f0', borderRadius:9, padding:'6px 12px' }}>
-                    <input
-                      type="number" min="1" max="12"
-                      value={m.hoursPerDay}
-                      onChange={e => updateMemberHours(m.id, Math.max(1, Math.min(12, parseInt(e.target.value||'8',10)||8)))}
-                      style={{ width:42, border:'none', background:'transparent', fontSize:15, fontWeight:700, color:'#0f172a', textAlign:'center', outline:'none' }}
-                    />
-                    <span style={{ fontSize:12, color:'#64748b', fontWeight:500 }}>h / día</span>
-                  </div>
-                  <span style={{ fontSize:12, color:'#64748b', whiteSpace:'nowrap' }}>{taskCount} tareas</span>
-                  <button onClick={() => removeMember(m.id)} style={{ display:'flex', padding:7, background:'#fff', border:'1px solid #fecaca', borderRadius:7, cursor:'pointer' }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                  </button>
-                </div>
+                <MemberRow
+                  key={m.id}
+                  member={m}
+                  taskCount={taskCount}
+                  updateMemberHours={updateMemberHours}
+                  removeMember={removeMember}
+                  requestConfirm={requestConfirm}
+                />
               )
             })}
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function MemberRow({ member, taskCount, updateMemberHours, removeMember, requestConfirm }: {
+  member: Member
+  taskCount: number
+  updateMemberHours: (id: string, hours: number) => void
+  removeMember:      (id: string) => void
+  requestConfirm:    (req: { title: string; message: string; confirmLabel?: string; onConfirm: () => void }) => void
+}) {
+  function handleRemove() {
+    requestConfirm({
+      title: '¿Quitar miembro?',
+      message: taskCount > 0
+        ? `${member.name} tiene tareas asignadas. Seguirán a su nombre aunque ya no esté en el equipo.`
+        : `${member.name} perderá acceso a este equipo.`,
+      confirmLabel: 'Quitar',
+      onConfirm: () => removeMember(member.id),
+    })
+  }
+
+  return (
+    <div style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:11, padding:'14px 16px', display:'flex', alignItems:'center', gap:14, boxShadow:'0 4px 16px rgba(15,23,42,.08)' }}>
+      <span style={{ width:38, height:38, borderRadius:'50%', background:member.color, display:'inline-flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:700, color:'#fff', flexShrink:0 }}>
+        {initials(member.name)}
+      </span>
+      <span style={{ flex:1, padding:'7px 10px', fontSize:14, fontWeight:600, color:'#1e293b' }}>
+        {member.name}
+      </span>
+      <div style={{ display:'flex', alignItems:'center', gap:8, background:'#f1f5f9', border:'1px solid #e2e8f0', borderRadius:9, padding:'6px 12px' }}>
+        <input
+          type="number" min="1" max="12"
+          value={member.hoursPerDay}
+          onChange={e => updateMemberHours(member.id, Math.max(1, Math.min(12, parseInt(e.target.value||'8',10)||8)))}
+          style={{ width:42, border:'none', background:'transparent', fontSize:15, fontWeight:700, color:'#0f172a', textAlign:'center', outline:'none' }}
+        />
+        <span style={{ fontSize:12, color:'#64748b', fontWeight:500 }}>h / día</span>
+      </div>
+      <span style={{ fontSize:12, color:'#64748b', whiteSpace:'nowrap' }}>{taskCount} tareas</span>
+      <button
+        onClick={handleRemove}
+        title="Quitar del equipo"
+        style={{ display:'flex', padding:7, background:'#fff', border:'1px solid #fecaca', borderRadius:7, cursor:'pointer' }}
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
     </div>
   )
 }

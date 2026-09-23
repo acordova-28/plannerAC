@@ -1,11 +1,12 @@
 import { create } from 'zustand'
-import { loginApi } from '../api/auth.api'
+import { loginApi, type LoginResponse } from '../api/auth.api'
 
 interface AuthUser {
   id: string
   nombre: string
   ldapUid: string
   email: string | null
+  picture?: string | null
 }
 
 interface AuthStore {
@@ -14,6 +15,7 @@ interface AuthStore {
   error:      string | null
   loading:    boolean
   login:      (username: string, password: string) => Promise<void>
+  setSession: (data: LoginResponse) => void
   logout:     () => void
   clearError: () => void
   isValid:    () => boolean
@@ -46,13 +48,18 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     set({ loading: true, error: null })
     try {
       const data = await loginApi(username, password)
-      localStorage.setItem(TOKEN_KEY, data.access_token)
-      localStorage.setItem(USER_KEY, JSON.stringify(data.user))
-      set({ token: data.access_token, user: data.user, loading: false })
+      get().setSession(data)
+      set({ loading: false })
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al iniciar sesión'
       set({ error: msg, loading: false })
     }
+  },
+
+  setSession: (data) => {
+    localStorage.setItem(TOKEN_KEY, data.access_token)
+    localStorage.setItem(USER_KEY, JSON.stringify(data.user))
+    set({ token: data.access_token, user: data.user, error: null })
   },
 
   logout: () => {

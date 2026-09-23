@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, RequestMethod } from '@nestjs/common';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 
@@ -21,7 +21,11 @@ async function bootstrap() {
     }),
   );
 
-  app.setGlobalPrefix('api');
+  // GET /login queda fuera del prefijo /api porque es la URI de redirección
+  // exacta registrada en Azure Entra ID (App registration > Authentication).
+  app.setGlobalPrefix('api', {
+    exclude: [{ path: 'login', method: RequestMethod.GET }],
+  });
 
   app.enableCors({
     origin: process.env.FRONTEND_URL ?? 'http://localhost:5173',

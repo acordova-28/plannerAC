@@ -93,7 +93,7 @@ export default function TareasSection() {
       </header>
 
       {/* View content */}
-      <div style={{ flex:1, minHeight:0, overflow:'auto' }}>
+      <div className="planner-scroll" style={{ flex:1, minHeight:0, overflow:'auto' }}>
         {view === 'table'  && <PlannerTableView />}
         {view === 'kanban' && <PlannerKanbanView />}
         {view === 'gantt'  && <PlannerGanttView />}
